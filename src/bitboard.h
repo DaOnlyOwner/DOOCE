@@ -4,73 +4,42 @@
 #include <vector>
 #include <array>
 #include <cstdint>
-
-typedef std::bitset<64> bitboard_constr;
-typedef uint64_t bitboard;
-
-static_assert(sizeof(unsigned long long) == sizeof(uint64_t), "unsigned long long needs to be 64 bit");
+#include "definitions.h"
 
 // starting positions
 
-enum class piece_type
-{
-	pawn,rook,bishop,knight,king,queen
-};
-
-enum class color
-{
-	white, black
-};
-
-constexpr int board_size = 8;
-constexpr int max_horse_pos = 8;
-
 class board
 {
-
-	enum class square : unsigned int
-	{
-		a1 = 0, b1, c1, d1, e1, f1, g1, h1,
-		a2, b2, c2, d2, e2, f2, g2, h2,
-		a3, b3, c3, d3, e3, f3, g3, h3,
-		a4, b4, c4, d4, e4, f4, g4, h4,
-		a5, b5, c5, d5, e5, f5, g5, h5,
-		a6, b6, c6, d6, e6, f6, g6, h6,
-		a7, b7, c7, d7, e7, f7, g7, h7,
-		a8, b8, c8, d8, e8, f8, g8, h8
-	};
-
-	inline unsigned int sq_to_int(square s) { return static_cast<unsigned int>(s); }
-
 	struct hq_mask
 	{
 		bitboard mask;
 		bitboard diagEx;
 		bitboard antidiagEx;
 		bitboard fileEx;
-#ifndef HQ_REMAP_RANK
 		bitboard rankEx;
-#endif
 	};
 
 	bitboard get_start(piece_type type, color player);
 
 	std::array<bitboard, 64> init_knight_attacks();
 	std::array<hq_mask, 64> init_hq_masks();
-
-	// Helper methods 
-	bitboard sliding_attacks(bitboard occ, bitboard attack_mask, bitboard mask);
-	bitboard sliding_rank_attacks(bitboard occ, bitboard attack_mask, bitboard mask, unsigned int slice);
+	std::array<bitboard, 64> init_king_attacks();
+	std::array<bitboard, 64> init_pawn_attacks();
 
 	// Attack generation.
-	bitboard gen_attacks_knight(bitboard occ, square s);
+	bitboard gen_attacks_king(square s);
+	bitboard gen_attacks_pawn(bitboard occ, square s);
+	bitboard gen_attacks_knight(square s);
 	bitboard gen_attacks_bishop(bitboard occ, square s);
 	bitboard gen_attacks_rook(bitboard occ, square s);
 	bitboard gen_attacks_queen(bitboard occ, square s);
 	
 	std::array<bitboard, 64> knight_attacks; // Knights
+	std::array<bitboard, 64> king_attacks;
 	std::array<hq_mask, 64> hq_masks; // Sliding pieces
 
+
+	/*
 	// From here: https://stackoverflow.com/questions/2602823/in-c-c-whats-the-simplest-way-to-reverse-the-order-of-bits-in-a-byte
 	std::array<unsigned char, 256> reversed_lt
 	{
@@ -106,26 +75,7 @@ class board
 		0x17, 0x97, 0x57, 0xd7, 0x37, 0xb7, 0x77, 0xf7,
 		0x0f, 0x8f, 0x4f, 0xcf, 0x2f, 0xaf, 0x6f, 0xef,
 		0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff,
-	};
-
-public:
-
-	inline static unsigned int to_idx(int x, int y)
-	{
-		bitboard a;
-		return y * board_size + x;
-	}
-
-	inline static std::pair<int, int> from_idx(unsigned int idx1d)
-	{
-		int y = idx1d / board_size;
-		int x = idx1d - board_size * y;
-	}
-
-	inline static bool contains(int x, int y)
-	{
-		return x < 8 && y < 8 && x >= 0 && y >= 0;
-	}
+	};*/
 
 };
 
