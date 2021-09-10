@@ -5,17 +5,19 @@
 #include <array>
 #include <cstdint>
 #include "definitions.h"
+#include "move.h"
+#include "mailbox.h"
+
 
 // starting positions
 
-class board
+struct board
 {
 
 
 	bitboard get_start(piece_type type, color player);
 
 
-public:
 	static void init_knight_attacks();
 	static void init_hq_masks();
 	static void init_king_attacks();
@@ -120,8 +122,57 @@ public:
 		attacks |= ops::hyperbola_quintessence_for_ranks(occ, hq_mask.rankEx, hq_mask.mask);
 		return attacks & not_own_color_occ;
 	}
-	
-private:
+
+	inline uint is_square_attacked(bitboard attacks, square sq)
+	{
+		return attacks & (~ops::set_square_bit(sq));
+	}
+
+	inline bool can_castle_kingside_white(bitboard occ, bitboard attacks)
+	{
+		return ops::get_bit_from_sq(occ, square::f1) &
+			ops::get_bit_from_sq(occ, square::g1) &
+			(!is_square_attacked(attacks,square::f1)) &
+			(!is_square_attacked(attacks,square::g1));
+	}
+
+	inline bool can_castle_kingside_black(bitboard occ, bitboard attacks)
+	{
+		return ops::get_bit_from_sq(occ, square::f8)&
+			ops::get_bit_from_sq(occ, square::g8)&
+			(!is_square_attacked(attacks, square::f8))&
+			(!is_square_attacked(attacks, square::g8));
+	}
+
+	inline bool can_castle_queenside_white(bitboard occ, bitboard attacks)
+	{
+		return ops::get_bit_from_sq(occ, square::d1)&
+			ops::get_bit_from_sq(occ, square::c1)&
+			ops::get_bit_from_sq(occ, square::b1)&
+			(!is_square_attacked(attacks, square::b1))&
+			(!is_square_attacked(attacks, square::c1))&
+			(!is_square_attacked(attacks, square::d1));
+	}
+
+	inline bool can_castle_queenside_black(bitboard occ, bitboard attacks)
+	{
+		return ops::get_bit_from_sq(occ, square::d8) &
+			ops::get_bit_from_sq(occ, square::c8) &
+			ops::get_bit_from_sq(occ, square::b8) &
+			(!is_square_attacked(attacks, square::b8)) &
+			(!is_square_attacked(attacks, square::c8)) &
+			(!is_square_attacked(attacks, square::d8));
+	}
+
+	// Returns true if the last move was a double pawn push, i.e. the pawn is now on an en passantable square.
+	bool do_move_black(const move& m);
+	bool do_move_white(const move& m);
+
+	void undo_move_black(const move& m);
+	void undo_move_white(const move& m);
+
+
+
 	struct hq_mask
 	{
 		bitboard mask;
@@ -133,6 +184,13 @@ private:
 	};
 	typedef std::array<bitboard, 64> move_lt;
 
+	bitboard white_board;
+	bitboard black_board;
+	bitboard en_passantable_pawns_white;
+	bitboard en_passantable_pawns_black;
+
+	mailbox mb_board;
+	
 	static std::array<bitboard, 64> knight_attacks; // Knights
 	static std::array<bitboard, 64> king_attacks;
 	static std::array<hq_mask, 64> hq_masks; // Sliding pieces

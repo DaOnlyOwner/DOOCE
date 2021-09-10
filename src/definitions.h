@@ -8,14 +8,19 @@ typedef unsigned int uint;
 
 static_assert(sizeof(unsigned long long) == sizeof(uint64_t), "unsigned long long needs to be 64 bit");
 
-enum class piece_type
+enum class piece_type : unsigned char
 {
-	pawn, rook, bishop, knight, king, queen
+	pawn, rook, bishop, knight, king, queen, none
 };
 
-enum class color
+enum class color : bool
 {
 	white, black
+};
+struct piece
+{
+	color c;
+	piece_type type;
 };
 
 enum class square : uint

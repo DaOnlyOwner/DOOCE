@@ -76,6 +76,18 @@ namespace ops
 		return std::make_pair(x, y);
 	}
 
+	inline uint get_bit_from_sq(bitboard b, square sq)
+	{
+		uint idx = 64-sq_to_int(sq);
+		return (b >> idx) & 1;
+	}
+
+	inline bitboard set_square_bit(square sq)
+	{
+		uint idx = 64 - sq_to_int(sq);
+		return 1UL << idx;
+	}
+
 	inline std::pair<uint, uint> from_idx(uint s)
 	{
 		int y = s >> 3;
