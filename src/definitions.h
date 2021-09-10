@@ -32,4 +32,3 @@ enum class square : uint
 
 static inline uint sq_to_int(square s) { return static_cast<uint>(s); }
 
-

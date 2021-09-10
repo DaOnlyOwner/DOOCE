@@ -10,6 +10,118 @@
 
 class board
 {
+
+
+	bitboard get_start(piece_type type, color player);
+
+
+public:
+	static void init_knight_attacks();
+	static void init_hq_masks();
+	static void init_king_attacks();
+	// Attack generation.
+	inline bitboard gen_attacks_king(square s, bitboard not_own_color_occ) { return not_own_color_occ & king_attacks[sq_to_int(s)]; };
+	
+	template<color VColor>
+	inline bitboard gen_attack_pawns_left(bitboard wpawns, bitboard black_occ)
+	{
+		return ops::no_we(wpawns) & black_occ;
+	}
+
+	template<>
+	inline bitboard gen_attack_pawns_left<color::black>(bitboard bpawns, bitboard white_occ)
+	{
+		return ops::so_we(bpawns) & white_occ;
+	}
+
+	template<color VColor>
+	inline bitboard gen_attack_pawns_right(bitboard wpawns, bitboard black_occ)
+	{
+		return ops::no_ea(wpawns) & black_occ;
+	}
+
+	template<>
+	inline bitboard gen_attack_pawns_right<color::black>(bitboard bpawns, bitboard white_occ)
+	{
+		return ops::so_ea(bpawns) & white_occ;
+	}
+
+	template<color VColor>
+	inline bitboard gen_move_pawns_single(bitboard wpawns, bitboard notOcc)
+	{
+		return ops::no(wpawns) & notOcc;
+	}
+
+	template<>
+	inline bitboard gen_move_pawns_single<color::black>(bitboard bpawns, bitboard notOcc)
+	{
+		return ops::no(bpawns) & notOcc;
+	}
+
+	template<color VColor>
+	inline bitboard gen_move_pawns_dbl(bitboard wpawns, bitboard notOcc)
+	{
+		return ops::no<2>(ops::mask_rank(2) & wpawns) & notOcc & ops::no(notOcc); // & mask_rank -> only second rank pawns can move double, & notOcc masks out everything on the square 1 forward, ops::no(notOcc) masks out everything on the square the pawn wants to go (2 forward).
+	}
+
+	template<>
+	inline bitboard gen_move_pawns_dbl<color::black>(bitboard bpawns, bitboard notOcc)
+	{
+		return ops::so<2>(ops::mask_rank(7) & bpawns) & notOcc & ops::so(notOcc);
+	}
+
+	// This method expects as input an occurancy bitboard where only pawns are set that can be captured en passant, i.e. that moved double.
+	template<color VColor> 
+	inline bitboard gen_en_passant_left(bitboard wpawns, bitboard bpawns_on_en_passant_square)
+	{
+		return (ops::no_we(wpawns & ops::mask_rank(5)) & ops::no(bpawns_on_en_passant_square)); // & ops::mask_rank(5) because we can only en passant pawns on rank 5, no_we because we capture to the left, so(bpawns_on_en_passant_square) to move the black pawns back so that it creates a mask on the capture square. 
+	}
+
+	template<color VColor>
+	inline bitboard gen_en_passant_right(bitboard wpawns, bitboard bpawns_on_en_passant_square)
+	{
+		return (ops::no_ea(wpawns & ops::mask_rank(5)) & ops::no(bpawns_on_en_passant_square)); 
+	}
+
+	template<>
+	inline bitboard gen_en_passant_left<color::black>(bitboard bpawns, bitboard wpawns_on_en_passant_square)
+	{
+		return (ops::so_we(bpawns & ops::mask_rank(4)) & ops::so(wpawns_on_en_passant_square)); 
+	}
+
+	template<>
+	inline bitboard gen_en_passant_left<color::black>(bitboard bpawns, bitboard wpawns_on_en_passant_square)
+	{
+		return (ops::so_ea(bpawns & ops::mask_rank(4)) & ops::so(wpawns_on_en_passant_square)); 
+	}
+
+
+	inline bitboard gen_attacks_knight(square s, bitboard not_own_color_occ) { return (not_own_color_occ & knight_attacks[sq_to_int(s)]); };
+	inline bitboard gen_attacks_bishop(bitboard occ, square s, bitboard not_own_color_occ)
+	{
+		auto& mask = hq_masks[sq_to_int(s)];
+		return not_own_color_occ & (ops::hyperbola_quintessence(occ, mask.diagEx, mask.mask) |
+			ops::hyperbola_quintessence(occ, mask.antidiagEx, mask.mask));
+	}
+	inline bitboard gen_attacks_rook(bitboard occ, square s, bitboard not_own_color_occ)
+	{
+		auto& hq_mask = hq_masks[sq_to_int(s)];
+
+		bitboard file_attacks = ops::hyperbola_quintessence(occ, hq_mask.fileEx, hq_mask.mask);
+		bitboard rank_attacks = ops::hyperbola_quintessence_for_ranks(occ, hq_mask.rankEx, hq_mask.mask);
+		return not_own_color_occ &(file_attacks | rank_attacks);
+	}
+	inline bitboard gen_attacks_queen(bitboard occ, square s, bitboard not_own_color_occ)
+	{
+		auto& hq_mask = hq_masks[sq_to_int(s)];
+		bitboard attacks = ops::hyperbola_quintessence(occ, hq_mask.diagEx, hq_mask.mask);
+		attacks |= ops::hyperbola_quintessence(occ, hq_mask.antidiagEx, hq_mask.mask);
+		attacks |= ops::hyperbola_quintessence(occ, hq_mask.fileEx, hq_mask.mask);
+		attacks |= ops::hyperbola_quintessence_for_ranks(occ, hq_mask.rankEx, hq_mask.mask);
+		return attacks & not_own_color_occ;
+	}
+	
+private:
 	struct hq_mask
 	{
 		bitboard mask;
@@ -17,26 +129,13 @@ class board
 		bitboard antidiagEx;
 		bitboard fileEx;
 		bitboard rankEx;
+		typedef std::array<hq_mask, 64> lt;
 	};
+	typedef std::array<bitboard, 64> move_lt;
 
-	bitboard get_start(piece_type type, color player);
-
-	std::array<bitboard, 64> init_knight_attacks();
-	std::array<hq_mask, 64> init_hq_masks();
-	std::array<bitboard, 64> init_king_attacks();
-	std::array<bitboard, 64> init_pawn_attacks();
-
-	// Attack generation.
-	bitboard gen_attacks_king(square s);
-	bitboard gen_attacks_pawn(bitboard occ, square s);
-	bitboard gen_attacks_knight(square s);
-	bitboard gen_attacks_bishop(bitboard occ, square s);
-	bitboard gen_attacks_rook(bitboard occ, square s);
-	bitboard gen_attacks_queen(bitboard occ, square s);
-	
-	std::array<bitboard, 64> knight_attacks; // Knights
-	std::array<bitboard, 64> king_attacks;
-	std::array<hq_mask, 64> hq_masks; // Sliding pieces
+	static std::array<bitboard, 64> knight_attacks; // Knights
+	static std::array<bitboard, 64> king_attacks;
+	static std::array<hq_mask, 64> hq_masks; // Sliding pieces
 
 
 	/*

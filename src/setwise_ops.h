@@ -58,48 +58,58 @@ namespace ops
 		return (b << 7) & notHFile;
 	}
 
-	inline static square to_sq(uint x, uint y)
+	inline square to_sq(uint x, uint y)
 	{
 		return static_cast<square>(y * 8 + x);
 	}
 
-	inline static uint to_idx(uint x, uint y)
+	inline uint to_idx(uint x, uint y)
 	{
 		return y * 8 + x;
 	}
 
-	inline static std::pair<uint, uint> from_sq(square sq)
+	inline std::pair<uint, uint> from_sq(square sq)
 	{
 		uint s = sq_to_int(sq);
-		int y = (s & 56) >> 3;
+		int y = s  >> 3;
 		int x = s & 7;
 		return std::make_pair(x, y);
 	}
 
-	inline static std::pair<uint, uint> from_idx(uint s)
+	inline std::pair<uint, uint> from_idx(uint s)
 	{
-		int y = (s & 56) >> 3;
+		int y = s >> 3;
 		int x = s & 7;
 		return std::make_pair(x, y);
 	}
 
 
-	inline static bool contains(int x, int y)
+	inline bool contains(int x, int y)
 	{
 		return x < 8 && y < 8 && x >= 0 && y >= 0;
 	}
 
-	// Note that "mask" has to be premultiplied by 2!	
-	template<typename FnRev>
-	bitboard hyperbola_quintessence(bitboard occ, bitboard attack_mask, bitboard mask, FnRev)
+	// From: http://graphics.stanford.edu/~seander/bithacks.html#BitReverseTable
+	inline bitboard rev_bits(bitboard b)
 	{
-		bitboard left, right;
-		left = occ & attack_mask;
-		right = _byteswap_uint64(left);
-		left -= mask; // mask is already multiplied by 2!
-		right -= _byteswap_uint64(mask);
-		left ^= _byteswap_uint64(right);
-		return left & attack_mask;
+		return ((b * 0x80200802ULL) & 0x0884422110ULL) * 0x0101010101ULL >> 32;
 	}
+
+	// Note that "slider" has to be premultiplied by 2!	
+	bitboard hyperbola_quintessence(bitboard occ, bitboard attack_mask, bitboard slider)
+	{
+		bitboard left;
+		left = occ & attack_mask;
+		return ((left - slider) ^ _byteswap_uint64(_byteswap_uint64(left) - _byteswap_uint64(slider))) & attack_mask;
+	}
+
+	bitboard hyperbola_quintessence_for_ranks(bitboard occ, bitboard attack_mask, bitboard slider)
+	{
+		uint shift_down = slider & 56; // == (slider >> 3) << 3, slider >> 3 gets the rank, << 3 multiplies the rank by 8, the number of bits we have to shift down.
+		bitboard left = (occ & attack_mask) >> shift_down;
+		return ((left - slider) ^ rev_bits(rev_bits(left) - rev_bits(slider))) << shift_down; // I don't need to & attack_mask because it is only limited to one byte and so already masked.
+	}
+
+
 }
 
