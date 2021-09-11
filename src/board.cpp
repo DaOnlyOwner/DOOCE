@@ -1,5 +1,5 @@
 #include "board.h"
-#include "setwise_ops.h"
+#include "bitwise_ops.h"
 
 
 std::array<bitboard, 64> board::knight_attacks;

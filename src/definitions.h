@@ -25,15 +25,15 @@ struct piece
 
 enum class square : uint
 {
-	a1 = 0, b1, c1, d1, e1, f1, g1, h1,
-	a2, b2, c2, d2, e2, f2, g2, h2,
-	a3, b3, c3, d3, e3, f3, g3, h3,
-	a4, b4, c4, d4, e4, f4, g4, h4,
-	a5, b5, c5, d5, e5, f5, g5, h5,
-	a6, b6, c6, d6, e6, f6, g6, h6,
-	a7, b7, c7, d7, e7, f7, g7, h7,
-	a8, b8, c8, d8, e8, f8, g8, h8
+	a1 = 63, b1=62, c1=61, d1=60, e1=59, f1=58, g1=57, h1=56,
+	a2=55, b2=54, c2=53, d2=52, e2=51, f2=50, g2=49, h2=48,
+	a3=47, b3=46, c3=45, d3=44, e3=43, f3=42, g3=41, h3=40,
+	a4=39, b4=38, c4=37, d4=36, e4=35, f4=34, g4=33, h4=32,
+	a5=31, b5=30, c5=29, d5=28, e5=27, f5=26, g5=25, h5=24,
+	a6=23, b6=22, c6=21, d6=20, e6=19, f6=18, g6=17, h6=16,
+	a7=15, b7=14, c7=13, d7=12, e7=11, f7=10, g7=9, h7=8,
+	a8=7, b8=6, c8=5, d8=4, e8=3, f8=2, g8=1, h8=0
 };
 
 static inline uint sq_to_int(square s) { return static_cast<uint>(s); }
-
+static inline square idx_to_sq(uint idx) { return static_cast<square>(idx); }

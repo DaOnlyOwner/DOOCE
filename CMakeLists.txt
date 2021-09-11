@@ -6,6 +6,9 @@ set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT d
 file(GLOB_RECURSE FILES "src/*.cpp" "src/*.h")
 
 add_executable(dooce ${FILES})
-set_target_properties(dooce PROPERTIES CXX_EXTENSIONS OFF)
-target_compile_features(dooce PUBLIC cxx_std_17)
-
+set_target_properties(dooce
+    PROPERTIES
+        CXX_STANDARD 17
+        CXX_STANDARD_REQUIRED YES
+        CXX_EXTENSIONS NO
+)

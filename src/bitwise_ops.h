@@ -78,14 +78,19 @@ namespace ops
 
 	inline uint get_bit_from_sq(bitboard b, square sq)
 	{
-		uint idx = 64-sq_to_int(sq);
+		uint idx = sq_to_int(sq);
 		return (b >> idx) & 1;
 	}
 
 	inline bitboard set_square_bit(square sq)
 	{
-		uint idx = 64 - sq_to_int(sq);
+		uint idx = sq_to_int(sq);
 		return 1UL << idx;
+	}
+
+	inline bitboard set_nth_bit(uint n)
+	{
+		1ULL << n;
 	}
 
 	inline std::pair<uint, uint> from_idx(uint s)
@@ -95,6 +100,18 @@ namespace ops
 		return std::make_pair(x, y);
 	}
 
+
+	inline uint num_trailing_zeros(bitboard b)
+	{
+		unsigned long idx;
+		_BitScanForward64(&idx, b);
+		return idx;
+	}
+
+	inline uint flip_idx(uint idx)
+	{
+		return 64 - idx;
+	}
 
 	inline bool contains(int x, int y)
 	{
