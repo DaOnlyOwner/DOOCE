@@ -17,7 +17,9 @@ enum class move_type : unsigned char
 	knight_promo_capture,
 	bishop_promo_capture,
 	rook_promo_capture,
-	queen_promo_capture
+	queen_promo_capture,
+	castling_kingside,
+	castling_queenside
 };
 
 struct move

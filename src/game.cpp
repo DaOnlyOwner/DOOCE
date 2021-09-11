@@ -13,6 +13,18 @@ void game::add_promo_moves(move& m, std::vector<move>& out)
 	out.push_back(m);
 }
 
+void game::add_promo_capture_moves(move& m, std::vector<move>& out)
+{
+	m.type_of_move = move_type::bishop_promo_capture;
+	out.push_back(m);
+	m.type_of_move = move_type::queen_promo_capture;
+	out.push_back(m);
+	m.type_of_move = move_type::rook_promo_capture;;
+	out.push_back(m);
+	m.type_of_move = move_type::knight_promo_capture;;
+	out.push_back(m);
+}
+
 void game::make_move(bitboard attacks, uint from, std::vector<move>& out, const mailbox& mb_board, color c)
 {
 	bitboard cpy = attacks;

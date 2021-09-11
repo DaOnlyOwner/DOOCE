@@ -7,6 +7,7 @@
 #include "definitions.h"
 #include "move.h"
 #include "mailbox.h"
+#include <string>
 
 
 // starting positions
@@ -14,6 +15,10 @@
 struct board
 {
 
+
+
+	board();
+	board(const std::string& board);
 
 	bitboard get_start(piece_type type, color player);
 

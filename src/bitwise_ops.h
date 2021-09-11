@@ -8,6 +8,7 @@ namespace ops
 	constexpr bitboard notHFile = 0x7f7f7f7f7f7f7f7f;
 	constexpr bitboard mask_rank(int r)
 	{
+		r -= 1; // first rank == index 0 etc.
 		bitboard b = 0b11111111;
 		return b << (r * 8);
 	}

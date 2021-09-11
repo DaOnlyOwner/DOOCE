@@ -1,10 +1,48 @@
 #include "board.h"
 #include "bitwise_ops.h"
-
+#include <cstring>
 
 std::array<bitboard, 64> board::knight_attacks;
 std::array<bitboard, 64> board::king_attacks;
 std::array<board::hq_mask, 64> board::hq_masks;
+
+board::board()
+{
+	white_board = bitboard_constr(
+		"00000000"
+		"00000000"
+		"00000000"
+		"00000000"
+		"00000000"
+		"00000000"
+		"11111111"
+		"11111111").to_ullong();
+
+	black_board = bitboard_constr(
+		"11111111"
+		"11111111"
+		"00000000"
+		"00000000"
+		"00000000"
+		"00000000"
+		"00000000"
+		"00000000").to_ullong();
+
+}
+
+board::board(const std::string& board)
+{
+	bitboard_constr constr_black;
+	bitboard_constr constr_white;
+
+	for (int i = 0; i<64; i++)
+	{
+		char c = board[i];
+		if (isupper(c)) constr_white.set(ops::flip_idx(i));
+		else constr_black.set(ops::flip_idx(i));
+	}
+
+}
 
 bitboard board::get_start(piece_type type, color player)
 {
