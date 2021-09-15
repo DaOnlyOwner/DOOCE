@@ -13,3 +13,6 @@ set_target_properties(dooce
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
 )
+
+enable_testing()
+ADD_SUBDIRECTORY(tests)
