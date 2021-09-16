@@ -181,8 +181,7 @@ private:
 					out.push_back(m);
 				}
 			}
-			attacks &= attacks - 1
-
+			attacks &= attacks - 1;
 		}
 	}
 

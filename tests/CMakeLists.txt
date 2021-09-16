@@ -1,0 +1,2 @@
+ADD_EXECUTABLE(drawing_tests drawing_tests.cpp)
+ADD_TEST(drawing_tests drawing_tests)
