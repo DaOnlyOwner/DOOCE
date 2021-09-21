@@ -85,10 +85,10 @@ struct board
 		return (ops::so_we(bpawns & ops::mask_rank(4)) & ops::so(wpawns_on_en_passant_square)); 
 	}
 
-	inline bitboard gen_en_passant_left_black(bitboard bpawns, bitboard wpawns_on_en_passant_square)
-	{
-		return (ops::so_ea(bpawns & ops::mask_rank(4)) & ops::so(wpawns_on_en_passant_square)); 
-	}
+	// inline bitboard gen_en_passant_left_black(bitboard bpawns, bitboard wpawns_on_en_passant_square)
+	// {
+	// 	return (ops::so_ea(bpawns & ops::mask_rank(4)) & ops::so(wpawns_on_en_passant_square)); 
+	// }
 
 
 	inline bitboard gen_attacks_knight(uint nat_idx, bitboard not_own_color_occ) { return (not_own_color_occ & knight_attacks[nat_idx]); };
