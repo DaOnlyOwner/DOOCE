@@ -6,7 +6,6 @@
 #include <cstdint>
 #include "definitions.h"
 #include "move.h"
-#include "mailbox.h"
 #include <string>
 
 
@@ -28,85 +27,73 @@ struct board
 	static void init_king_attacks();
 	// Attack generation.
 	inline bitboard gen_attacks_king(uint nat_idx, bitboard not_own_color_occ) { return not_own_color_occ & king_attacks[nat_idx]; };
-	
-	inline bitboard gen_attack_pawns_left_white(bitboard wpawns, bitboard black_occ)
+
+	template<color VColor>
+	static inline bitboard gen_attack_pawns_left(bitboard own_pawns, bitboard enemy_occ)
 	{
-		return ops::no_we(wpawns) & black_occ;
+		if constexpr (VColor == color::white)
+			return ops::no_we(own_pawns) & enemy_occ;
+		else return ops::so_we(own_pawns) & enemy_occ;
 	}
 
-	inline bitboard gen_attack_pawns_left_black(bitboard bpawns, bitboard white_occ)
+	template<color VColor>
+	static inline bitboard gen_attack_pawns_right(bitboard own_pawns, bitboard enemy_occ)
 	{
-		return ops::so_we(bpawns) & white_occ;
+		if constexpr (VColor == color::white)
+			return ops::no_ea(own_pawns) & enemy_occ;
+		else return ops::so_ea(own_pawns) & enemy_occ;
 	}
 
-	inline bitboard gen_attack_pawns_right_white(bitboard wpawns, bitboard black_occ)
+	template<color VColor>
+	static inline bitboard gen_move_pawns_single(bitboard own_pawns, bitboard notOcc)
 	{
-		return ops::no_ea(wpawns) & black_occ;
+		if constexpr (VColor == color::white)
+			return ops::no(own_pawns) & notOcc;
+		else ops::so(own_pawns)& notOcc;
 	}
 
-	inline bitboard gen_attack_pawns_right_black(bitboard bpawns, bitboard white_occ)
+	template<color VColor>
+	static inline bitboard gen_move_pawns_dbl(bitboard own_pawns, bitboard notOcc)
 	{
-		return ops::so_ea(bpawns) & white_occ;
+		if constexpr (VColor == color::white)
+			return ops::no<2>(ops::mask_rank(2) & own_pawns) & notOcc & ops::no(notOcc); // & mask_rank -> only second rank pawns can move double, & notOcc masks out everything on the square 1 forward, ops::no(notOcc) masks out everything on the square the pawn wants to go (2 forward).
+		else return ops::so<2>(ops::mask_rank(7) & own_pawns) & notOcc & ops::so(notOcc);
 	}
 
-	inline bitboard gen_move_pawns_single_white(bitboard wpawns, bitboard notOcc)
-	{
-		return ops::no(wpawns) & notOcc;
-	}
-
-	inline bitboard gen_move_pawns_single_black(bitboard bpawns, bitboard notOcc)
-	{
-		return ops::no(bpawns) & notOcc;
-	}
-
-	inline bitboard gen_move_pawns_dbl_white(bitboard wpawns, bitboard notOcc)
-	{
-		return ops::no<2>(ops::mask_rank(2) & wpawns) & notOcc & ops::no(notOcc); // & mask_rank -> only second rank pawns can move double, & notOcc masks out everything on the square 1 forward, ops::no(notOcc) masks out everything on the square the pawn wants to go (2 forward).
-	}
-
-	inline bitboard gen_move_pawns_dbl_black(bitboard bpawns, bitboard notOcc)
-	{
-		return ops::so<2>(ops::mask_rank(7) & bpawns) & notOcc & ops::so(notOcc);
-	}
 
 	// This method expects as input an occurancy bitboard where only pawns are set that can be captured en passant, i.e. that moved double.
-	inline bitboard gen_en_passant_left_white(bitboard wpawns, bitboard bpawns_on_en_passant_square)
+	template<color VColor>
+	static inline bitboard gen_en_passant_left(bitboard own_pawns, bitboard pawns_on_en_passant_square)
 	{
-		return (ops::no_we(wpawns & ops::mask_rank(5)) & ops::no(bpawns_on_en_passant_square)); // & ops::mask_rank(5) because we can only en passant pawns on rank 5, no_we because we capture to the left, so(bpawns_on_en_passant_square) to move the black pawns back so that it creates a mask on the capture square. 
+		if constexpr (VColor == color::white)
+			return (ops::no_we(own_pawns & ops::mask_rank(5)) & ops::no(pawns_on_en_passant_square)); // & ops::mask_rank(5) because we can only en passant pawns on rank 5, no_we because we capture to the left, so(bpawns_on_en_passant_square) to move the black pawns back so that it creates a mask on the capture square. 
+		else return (ops::so_we(own_pawns & ops::mask_rank(4)) & ops::so(pawns_on_en_passant_square));
 	}
 
-	inline bitboard gen_en_passant_right_white(bitboard wpawns, bitboard bpawns_on_en_passant_square)
+	template<color VColor>
+	static inline bitboard gen_en_passant_right(bitboard own_pawns, bitboard pawns_on_en_passant_square)
 	{
-		return (ops::no_ea(wpawns & ops::mask_rank(5)) & ops::no(bpawns_on_en_passant_square)); 
+		if constexpr (VColor == color::white)
+			return (ops::no_ea(own_pawns & ops::mask_rank(5)) & ops::no(pawns_on_en_passant_square));
+		else return (ops::so_ea(own_pawns & ops::mask_rank(4)) & ops::so(pawns_on_en_passant_square));
 	}
 
-	inline bitboard gen_en_passant_left_black(bitboard bpawns, bitboard wpawns_on_en_passant_square)
-	{
-		return (ops::so_we(bpawns & ops::mask_rank(4)) & ops::so(wpawns_on_en_passant_square)); 
-	}
-
-	// inline bitboard gen_en_passant_left_black(bitboard bpawns, bitboard wpawns_on_en_passant_square)
-	// {
-	// 	return (ops::so_ea(bpawns & ops::mask_rank(4)) & ops::so(wpawns_on_en_passant_square)); 
-	// }
-
-
-	inline bitboard gen_attacks_knight(uint nat_idx, bitboard not_own_color_occ) { return (not_own_color_occ & knight_attacks[nat_idx]); };
-	inline bitboard gen_attacks_bishop(bitboard occ, uint natural_idx, bitboard not_own_color_occ)
+	static inline bitboard gen_attacks_knight(uint nat_idx, bitboard not_own_color_occ) { return (not_own_color_occ & knight_attacks[nat_idx]); };
+	static inline bitboard gen_attacks_bishop(bitboard occ, uint natural_idx, bitboard not_own_color_occ)
 	{
 		auto& mask = hq_masks[natural_idx];
 		return not_own_color_occ & (ops::hyperbola_quintessence(occ, mask.diagEx, mask.mask) |
 			ops::hyperbola_quintessence(occ, mask.antidiagEx, mask.mask));
 	}
-	inline bitboard gen_attacks_rook(bitboard occ, uint natural_idx, bitboard not_own_color_occ)
+	static inline bitboard gen_attacks_rook(bitboard occ, uint natural_idx, bitboard not_own_color_occ)
 	{
 		auto& hq_mask = hq_masks[natural_idx];
 
 		bitboard file_attacks = ops::hyperbola_quintessence(occ, hq_mask.fileEx, hq_mask.mask);
 		bitboard rank_attacks = ops::hyperbola_quintessence_for_ranks(occ, hq_mask.rankEx, hq_mask.mask);
-		return not_own_color_occ &(file_attacks | rank_attacks);
+		return not_own_color_occ & (file_attacks | rank_attacks);
 	}
-	inline bitboard gen_attacks_queen(bitboard occ, uint nat_idx, bitboard not_own_color_occ)
+	static inline bitboard gen_attacks_queen(bitboard occ, uint nat_idx, bitboard not_own_color_occ)
 	{
 		auto& hq_mask = hq_masks[nat_idx];
 		bitboard attacks = ops::hyperbola_quintessence(occ, hq_mask.diagEx, hq_mask.mask);
@@ -116,54 +103,234 @@ struct board
 		return attacks & not_own_color_occ;
 	}
 
-	inline uint is_square_attacked(bitboard attacks, square sq)
+	static inline uint is_square_attacked(bitboard attacks, square sq)
 	{
 		return attacks & (~ops::set_square_bit(sq));
 	}
 
 	// TODO: Here add the king square to is_square_attacked.
-	inline bool can_castle_kingside_white(bitboard occ, bitboard attacks)
+	template<color VColor>
+	static inline bool can_castle_kingside(bitboard occ, bitboard attacks)
 	{
-		return ~ops::get_bit_from_sq(occ, square::f1) &
+		if constexpr (VColor == color::white)
+			return ~ops::get_bit_from_sq(occ, square::f1) &
 			~ops::get_bit_from_sq(occ, square::g1) &
-			~is_square_attacked(attacks,square::f1) &
-			~is_square_attacked(attacks,square::g1);
+			~is_square_attacked(attacks, square::f1) &
+			~is_square_attacked(attacks, square::g1) &
+			~is_square_attacked(attacks, square::e1);
+		else
+			return ~ops::get_bit_from_sq(occ, square::f8) &
+			~ops::get_bit_from_sq(occ, square::g8) &
+			~is_square_attacked(attacks, square::f8) &
+			~is_square_attacked(attacks, square::g8) &
+			~is_square_attacked(attacks, square::e8);
+
 	}
 
-	inline bool can_castle_kingside_black(bitboard occ, bitboard attacks)
+	template<color VColor>
+	static inline bool can_castle_queenside(bitboard occ, bitboard attacks)
 	{
-		return ~ops::get_bit_from_sq(occ, square::f8)&
-			~ops::get_bit_from_sq(occ, square::g8)&
-			~is_square_attacked(attacks, square::f8)&
-			~is_square_attacked(attacks, square::g8);
-	}
-
-	inline bool can_castle_queenside_white(bitboard occ, bitboard attacks)
-	{
-		return ~ops::get_bit_from_sq(occ, square::d1)&
-			~ops::get_bit_from_sq(occ, square::c1)&
-			~ops::get_bit_from_sq(occ, square::b1)&
-			~is_square_attacked(attacks, square::b1)&
-			~is_square_attacked(attacks, square::c1)&
-			~is_square_attacked(attacks, square::d1);
-	}
-
-	inline bool can_castle_queenside_black(bitboard occ, bitboard attacks)
-	{
-		return ~ops::get_bit_from_sq(occ, square::d8) &
+		if constexpr (VColor == color::white)
+			return ~ops::get_bit_from_sq(occ, square::d1) &
+			~ops::get_bit_from_sq(occ, square::c1) &
+			~ops::get_bit_from_sq(occ, square::b1) &
+			~is_square_attacked(attacks, square::b1) &
+			~is_square_attacked(attacks, square::c1) &
+			~is_square_attacked(attacks, square::d1) &
+			~is_square_attacked(attacks, square::e1);
+		else
+			return ~ops::get_bit_from_sq(occ, square::d8) &
 			~ops::get_bit_from_sq(occ, square::c8) &
 			~ops::get_bit_from_sq(occ, square::b8) &
 			~is_square_attacked(attacks, square::b8) &
 			~is_square_attacked(attacks, square::c8) &
-			~is_square_attacked(attacks, square::d8);
+			~is_square_attacked(attacks, square::d8) &
+			~is_square_attacked(attacks, square::e8);
+
+	}
+
+
+	bitboard& get_board(piece_type ptype, color c)
+	{
+		return boards[static_cast<uint>(ptype)][static_cast<uint>(c)];
+	}
+
+
+	inline void handle_quiet_move(bitboard& own, bitboard from, bitboard to)
+	{
+		own = (own | to) & ~from;
 	}
 
 	// Returns true if the last move was a double pawn push, i.e. the pawn is now on an en passantable square.
-	bool do_move_black(const move& m);
-	bool do_move_white(const move& m);
+	template<color VColor>
+	void do_move(const move& m)
+	{
+		constexpr color ecolor = static_cast<color>(1 - static_cast<uint>(VColor));
+		bitboard& own = get_board(m.get_moved_piece_type(),VColor);
+		bitboard from = m.get_from();
+		bitboard to = m.get_to();
 
-	void undo_move_black(const move& m);
-	void undo_move_white(const move& m);
+		switch (m.get_move_type())
+		{
+		case move_type::promo:
+		{
+			own &= ~from;
+			bitboard& promo_board = get_board(m.get_promo_piece_type(), VColor);
+			promo_board |= to;
+		}
+		break;
+
+		case move_type::promo_captures:
+		{
+			own &= ~from;
+			bitboard& promo_board = get_board(m.get_promo_piece_type(), VColor);
+			promo_board |= to;
+			bitboard& enemy = get_board(m.get_captured_piece_type(), ecolor);
+			enemy &= ~to;
+		}
+		break;
+
+		case move_type::captures:
+		{
+			handle_quiet_move(own, from, to);
+			bitboard& enemy = get_board(m.get_captured_piece_type(), ecolor);
+			enemy &= ~to;
+		}
+		break;
+
+		case move_type::quiet:
+			handle_quiet_move(own, from, to);
+			break;
+		case move_type::en_passant:
+		{
+			handle_quiet_move(own, from, to);
+			bitboard& enemy = get_board(piece_type::pawn, ecolor);
+			if constexpr (VColor == color::white)
+				enemy &= ~ops::so(to);
+			else enemy &= ~ops::no(to);
+		}
+		break;
+		case move_type::king_castle:
+			// own == king
+		{
+			constexpr auto rook_from_square = VColor == color::white ? square::h1 : square::h8;
+			constexpr auto rook_to_square = VColor == color::white ? square::f1 : square::f8;
+			constexpr auto king_from_square = VColor == color::white ? square::e1 : square::e8;
+			constexpr auto king_to_square = VColor == color::white ? square::g1 : square::g8;
+			constexpr bitboard rook_from = ops::set_square_bit(rook_from_square);
+			constexpr bitboard rook_to = ops::set_square_bit(rook_to_square);
+			constexpr bitboard king_from = ops::set_square_bit(king_from_square);
+			constexpr bitboard king_to = ops::set_square_bit(king_to_square);
+
+			bitboard& rooks = get_board(piece_type::rook, VColor);
+			handle_quiet_move(rooks, rook_from, rook_to);
+			handle_quiet_move(own, king_from, king_to);			
+		}
+		break;
+		// own == king
+		case move_type::queen_castle:
+		{
+			constexpr auto rook_from_square = VColor == color::white ? square::a1 : square::a8;
+			constexpr auto rook_to_square = VColor == color::white ? square::d1 : square::d8;
+			constexpr auto king_from_square = VColor == color::white ? square::e1 : square::e8;
+			constexpr auto king_to_square = VColor == color::white ? square::g1 : square::g8;
+			constexpr bitboard rook_from = ops::set_square_bit(rook_from_square);
+			constexpr bitboard rook_to = ops::set_square_bit(rook_to_square);
+			constexpr bitboard king_from = ops::set_square_bit(king_from_square);
+			constexpr bitboard king_to = ops::set_square_bit(king_to_square);
+
+			bitboard& rooks = get_board(piece_type::rook, VColor);
+			handle_quiet_move(rooks, rook_from, rook_to);
+			handle_quiet_move(own, king_from, king_to);
+		}
+		break;
+		}
+	}
+
+	template<color VColor>
+	void undo_move(const move& m)
+	{
+		constexpr color ecolor = static_cast<color>(1 - static_cast<uint>(VColor));
+		bitboard& own = get_board(m.get_moved_piece_type(), VColor);
+		bitboard from = m.get_from();
+		bitboard to = m.get_to();
+
+		switch (m.get_move_type())
+		{
+		case move_type::promo:
+		{
+			own |= from;
+			bitboard& promo_board = get_board(m.get_promo_piece_type(), VColor);
+			promo_board &= ~to;
+		}
+		break;
+
+		case move_type::promo_captures:
+		{
+			own |= from;
+			bitboard& promo_board = get_board(m.get_promo_piece_type(), VColor);
+			promo_board &= ~to;
+			bitboard& enemy = get_board(m.get_captured_piece_type(), ecolor);
+			enemy |= to;
+		}
+		break;
+
+		case move_type::captures:
+		{
+			handle_quiet_move(own, to, from);
+			bitboard& enemy = get_board(m.get_captured_piece_type(), ecolor);
+			enemy |= to;
+		}
+		break;
+
+		case move_type::quiet:
+			handle_quiet_move(own, to, from);
+			break;
+		case move_type::en_passant:
+		{
+			handle_quiet_move(own, to, from);
+			bitboard& enemy = get_board(piece_type::pawn, ecolor);
+			if constexpr (VColor == color::white)
+				enemy |= ops::so(to);
+			else enemy |= ops::no(to);
+		}
+		break;
+		case move_type::king_castle:
+			// own == king
+		{
+			constexpr auto rook_from_square = VColor == color::white ? square::h1 : square::h8;
+			constexpr auto rook_to_square = VColor == color::white ? square::f1 : square::f8;
+			constexpr auto king_from_square = VColor == color::white ? square::e1 : square::e8;
+			constexpr auto king_to_square = VColor == color::white ? square::g1 : square::g8;
+			constexpr bitboard rook_from = ops::set_square_bit(rook_from_square);
+			constexpr bitboard rook_to = ops::set_square_bit(rook_to_square);
+			constexpr bitboard king_from = ops::set_square_bit(king_from_square);
+			constexpr bitboard king_to = ops::set_square_bit(king_to_square);
+
+			bitboard& rooks = get_board(piece_type::rook, VColor);
+			handle_quiet_move(rooks, rook_to, rook_from);
+			handle_quiet_move(own, king_to, king_from);
+		}
+		break;
+		// own == king
+		case move_type::queen_castle:
+		{
+			constexpr auto rook_from_square = VColor == color::white ? square::a1 : square::a8;
+			constexpr auto rook_to_square = VColor == color::white ? square::d1 : square::d8;
+			constexpr auto king_from_square = VColor == color::white ? square::e1 : square::e8;
+			constexpr auto king_to_square = VColor == color::white ? square::g1 : square::g8;
+			constexpr bitboard rook_from = ops::set_square_bit(rook_from_square);
+			constexpr bitboard rook_to = ops::set_square_bit(rook_to_square);
+			constexpr bitboard king_from = ops::set_square_bit(king_from_square);
+			constexpr bitboard king_to = ops::set_square_bit(king_to_square);
+
+			bitboard& rooks = get_board(piece_type::rook, VColor);
+			handle_quiet_move(rooks, rook_to, rook_from);
+			handle_quiet_move(own, king_to, king_from);
+		}
+		break;
+		}
+	}
 
 	struct hq_mask
 	{
@@ -176,12 +343,8 @@ struct board
 	};
 	typedef std::array<bitboard, 64> move_lt;
 
-	bitboard white_board;
-	bitboard black_board;
-	bitboard en_passantable_pawns_white;
-	bitboard en_passantable_pawns_black;
-
-	mailbox mb_board;
+	bitboard boards[6][2];
+	
 	
 	static std::array<bitboard, 64> knight_attacks; // Knights
 	static std::array<bitboard, 64> king_attacks;

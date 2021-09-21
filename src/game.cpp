@@ -1,3 +1,4 @@
+#if 0 
 #include "game.h"
 #include "bitwise_ops.h"
 
@@ -47,3 +48,4 @@ void game::make_move(bitboard attacks, uint from, std::vector<move>& out, const 
 		cpy &= cpy - 1;
 	}
 }
+#endif

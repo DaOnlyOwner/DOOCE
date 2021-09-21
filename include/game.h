@@ -1,3 +1,4 @@
+#if 0
 #pragma once
 #include <vector>
 #include "move.h"
@@ -198,4 +199,4 @@ private:
 	board current_board;
 };
 
-
+#endif

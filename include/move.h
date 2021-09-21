@@ -1,33 +1,54 @@
 #pragma once
 #include "definitions.h"
+#include "bitwise_ops.h"
 
 enum class move_type : unsigned char
 {
 	quiet=0,
-	pawn_single,
-	pawn_double,
+	//pawn_single,
+	//pawn_double,
 	king_castle,
 	queen_castle,
 	captures,
 	en_passant,
-	knight_promo,
-	bishop_promo,
-	rook_promo,
-	queen_promo,
-	knight_promo_capture,
-	bishop_promo_capture,
-	rook_promo_capture,
-	queen_promo_capture,
-	castling_kingside,
-	castling_queenside
+	promo,
+	promo_captures
 };
 
 struct move
 {
-	unsigned char from, to; // from and to are from bottom right = 0 to top left = 64.
-	piece_type piece_moved;
-	move_type type_of_move;
-	piece piece_captured;
-	bool was_en_passantable;
+	unsigned int from, to;
+	piece_type captured;
+	piece_type moved;
+	piece_type promo;
+
+	move(uint from, uint to, piece_type captured, piece_type moved, piece_type promo)
+		: from(from),to(to),captured(captured),moved(moved),promo(promo)
+	{}
+
+	bitboard get_from()
+	{
+		return ops::set_nth_bit(from);
+	}
+
+	bitboard get_to()
+	{
+		return ops::set_nth_bit(to);
+	}
+
+	piece_type get_moved_piece_type()
+	{
+		return moved;
+	}
+
+	piece_type get_captured_piece_type()
+	{
+		return captured;
+	}
+
+	piece_type get_promo_piece_type()
+	{
+		return promo;
+	}
 };
 

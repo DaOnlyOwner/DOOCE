@@ -6,6 +6,7 @@ std::array<bitboard, 64> board::knight_attacks;
 std::array<bitboard, 64> board::king_attacks;
 std::array<board::hq_mask, 64> board::hq_masks;
 
+/*
 board::board()
 {
 	white_board = bitboard_constr(
@@ -197,6 +198,8 @@ bitboard board::get_start(piece_type type, color player)
 		break;
 	}
 }
+*/
+
 
 namespace
 {
@@ -333,6 +336,7 @@ void board::init_king_attacks()
 	}
 }
 
+/*
 bool board::do_move_black(const move& m)
 {
 	// Set nth bit
@@ -345,18 +349,6 @@ bool board::do_move_black(const move& m)
 	return en_passantable_pawns_black > 0;
 }
 
-bool board::do_move_white(const move& m)
-{
-	// Set nth bit
-	bitboard move_to_bit = 1UL << m.to;
-	bitboard move_from_bit = (1UL << m.from);
-	white_board = (white_board | move_to_bit) & ~move_from_bit;
-	black_board &= ~move_to_bit; 
-	en_passantable_pawns_white = (static_cast<bitboard>(m.type_of_move == move_type::pawn_double) << m.to) & move_to_bit;
-	return en_passantable_pawns_white > 0;
-	mb_board.do_move(m);
-}
-
 void board::undo_move_black(const move& m)
 {
 	// Set nth bit
@@ -367,17 +359,7 @@ void board::undo_move_black(const move& m)
 	en_passantable_pawns_black = (static_cast<bitboard>(m.was_en_passantable) << m.from) & move_from_bit; // Sets the nth bit if the move to undo resets the state to an en passantable pawn. 
 	mb_board.undo_move(m);
 }
-
-void board::undo_move_white(const move& m)
-{
-	// Set nth bit
-	bitboard move_to_bit = 1UL << m.to;
-	bitboard move_from_bit = (1UL << m.from);
-	white_board = (white_board | move_from_bit) & ~move_to_bit;
-	white_board &= static_cast<bitboard>(m.piece_captured.type != piece_type::none) << m.from;
-	en_passantable_pawns_white = (static_cast<bitboard>(m.was_en_passantable) << m.from) & move_from_bit; 
-	mb_board.undo_move(m);
-}
+*/
 
 
 /*move_gen_helper::first_rank_attacks_lt move_gen_helper::init_fra()

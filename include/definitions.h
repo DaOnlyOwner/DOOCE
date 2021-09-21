@@ -1,6 +1,7 @@
 #pragma once
 #include <bitset>
 #include <array>
+#include <cstdint>
 
 typedef std::bitset<64> bitboard_constr;
 typedef uint64_t bitboard;
@@ -8,14 +9,14 @@ typedef unsigned int uint;
 
 static_assert(sizeof(unsigned long long) == sizeof(uint64_t), "unsigned long long needs to be 64 bit");
 
-enum class piece_type : unsigned char
+enum class piece_type : uint
 {
-	pawn, rook, bishop, knight, king, queen, none
+	pawn=0, rook, bishop, knight, king, queen, none
 };
 
-enum class color : bool
+enum class color : uint
 {
-	white, black
+	white=0, black
 };
 struct piece
 {
