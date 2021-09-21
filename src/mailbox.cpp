@@ -43,11 +43,6 @@ mailbox::mailbox(const std::string& b)
 
 void mailbox::do_move(const move& m)
 {
-	if (m.type_of_move == move_type::castling_kingside)
-	{
-
-	}
-
 	auto p = repr[m.from];
 	repr[m.from] = { color::white,piece_type::none };
 	switch (m.type_of_move)

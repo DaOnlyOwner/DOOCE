@@ -10,7 +10,7 @@ public:
 	game();
 
 	template<color VColor>
-	std::vector<move> gen_all_legal_moves(bool is_in_check)
+	std::vector<move> gen_all_legal_moves(bitboard* all_attacks_out)
 	{
 		std::vector<move> out;
 		out.reserve(150);
@@ -108,8 +108,7 @@ public:
 				out.push_back(m);
 			}
 
-
-
+			*all_attacks_out = all_attacks;
 		}
 
 

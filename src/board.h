@@ -121,6 +121,7 @@ struct board
 		return attacks & (~ops::set_square_bit(sq));
 	}
 
+	// TODO: Here add the king square to is_square_attacked.
 	inline bool can_castle_kingside_white(bitboard occ, bitboard attacks)
 	{
 		return ~ops::get_bit_from_sq(occ, square::f1) &
