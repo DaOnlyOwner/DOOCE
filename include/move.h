@@ -1,6 +1,7 @@
 #pragma once
 #include "definitions.h"
 #include "bitwise_ops.h"
+#include <optional>
 
 enum class move_type : uint
 {
@@ -19,10 +20,8 @@ struct move
 {
 	uint from, to;
 	piece_type moved;
-	//std::optional<piece_type> captured;
-	//std::optional<piece_type> promo;
-	piece_type captured;
-	piece_type promo;
+	std::optional<piece_type> captured;
+	std::optional<piece_type> promo;
 	move_type mtype;
 
 
@@ -36,12 +35,12 @@ struct move
 		this->to = to;
 	}
 
-	void set_promo_piece_type(const piece_type ptype)
+	void set_promo_piece_type(const std::optional<piece_type> ptype)
 	{
 		promo = ptype;
 	}
 
-	void set_captured_piece_type(const piece_type ctype)
+	void set_captured_piece_type(const std::optional<piece_type> ctype)
 	{
 		captured = ctype;
 	}
@@ -74,13 +73,13 @@ struct move
 	// Only call when checked that move_type == captures or promo_captures
 	piece_type get_captured_piece_type()
 	{
-		return captured;
+		return captured.value();
 	}
 
 	// Only call when move_type == promo or promo_captures
 	piece_type get_promo_piece_type()
 	{
-		return promo;
+		return promo.value();
 	}
 };
 
