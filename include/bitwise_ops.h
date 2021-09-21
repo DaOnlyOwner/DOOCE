@@ -13,6 +13,10 @@ namespace ops
 		return b << (r * 8);
 	}
 
+	inline bool has_bit_set_on_rank(bitboard b, int r)
+	{
+		return (ops::mask_rank(r) ^ b) == b;
+	}
 
 	template<int VShiftAmount = 1>
 	inline bitboard so(bitboard b)
@@ -126,20 +130,18 @@ namespace ops
 	}
 
 	// Note that "slider" has to be premultiplied by 2!	
-	bitboard hyperbola_quintessence(bitboard occ, bitboard attack_mask, bitboard slider)
+	inline bitboard hyperbola_quintessence(bitboard occ, bitboard attack_mask, bitboard slider)
 	{
 		bitboard left;
 		left = occ & attack_mask;
 		return ((left - slider) ^ _byteswap_uint64(_byteswap_uint64(left) - _byteswap_uint64(slider))) & attack_mask;
 	}
 
-	bitboard hyperbola_quintessence_for_ranks(bitboard occ, bitboard attack_mask, bitboard slider)
+	inline bitboard hyperbola_quintessence_for_ranks(bitboard occ, bitboard attack_mask, bitboard slider)
 	{
 		uint shift_down = slider & 56; // == (slider >> 3) << 3, slider >> 3 gets the rank, << 3 multiplies the rank by 8, the number of bits we have to shift down.
 		bitboard left = (occ & attack_mask) >> shift_down;
 		return ((left - slider) ^ rev_bits(rev_bits(left) - rev_bits(slider))) << shift_down; // I don't need to & attack_mask because it is only limited to one byte and so already masked.
 	}
-
-
 }
 

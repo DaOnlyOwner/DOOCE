@@ -1,7 +1,7 @@
-#if 0 
 #include "game.h"
 #include "bitwise_ops.h"
 
+#if 0 
 void game::add_promo_moves(move& m, std::vector<move>& out)
 {
 	m.type_of_move = move_type::bishop_promo;
@@ -49,3 +49,15 @@ void game::make_move(bitboard attacks, uint from, std::vector<move>& out, const 
 	}
 }
 #endif
+
+void game::push_promo_moves(std::vector<move>& out, move& m)
+{
+	m.set_promo_piece_type(piece_type::knight);
+	out.push_back(m);
+	m.set_promo_piece_type(piece_type::queen);
+	out.push_back(m);
+	m.set_promo_piece_type(piece_type::rook);
+	out.push_back(m);
+	m.set_promo_piece_type(piece_type::bishop);
+	out.push_back(m);
+}

@@ -26,7 +26,7 @@ struct board
 	static void init_hq_masks();
 	static void init_king_attacks();
 	// Attack generation.
-	inline bitboard gen_attacks_king(uint nat_idx, bitboard not_own_color_occ) { return not_own_color_occ & king_attacks[nat_idx]; };
+	inline bitboard gen_attacks_king(uint nat_idx) { return king_attacks[nat_idx]; };
 
 	template<color VColor>
 	static inline bitboard gen_attack_pawns_left(bitboard own_pawns, bitboard enemy_occ)
@@ -78,29 +78,29 @@ struct board
 		else return (ops::so_ea(own_pawns & ops::mask_rank(4)) & ops::so(pawns_on_en_passant_square));
 	}
 
-	static inline bitboard gen_attacks_knight(uint nat_idx, bitboard not_own_color_occ) { return (not_own_color_occ & knight_attacks[nat_idx]); };
-	static inline bitboard gen_attacks_bishop(bitboard occ, uint natural_idx, bitboard not_own_color_occ)
+	static inline bitboard gen_attacks_knight(uint nat_idx) { return (knight_attacks[nat_idx]); };
+	static inline bitboard gen_attacks_bishop(bitboard occ, uint natural_idx)
 	{
 		auto& mask = hq_masks[natural_idx];
-		return not_own_color_occ & (ops::hyperbola_quintessence(occ, mask.diagEx, mask.mask) |
+		return (ops::hyperbola_quintessence(occ, mask.diagEx, mask.mask) |
 			ops::hyperbola_quintessence(occ, mask.antidiagEx, mask.mask));
 	}
-	static inline bitboard gen_attacks_rook(bitboard occ, uint natural_idx, bitboard not_own_color_occ)
+	static inline bitboard gen_attacks_rook(bitboard occ, uint natural_idx)
 	{
 		auto& hq_mask = hq_masks[natural_idx];
 
 		bitboard file_attacks = ops::hyperbola_quintessence(occ, hq_mask.fileEx, hq_mask.mask);
 		bitboard rank_attacks = ops::hyperbola_quintessence_for_ranks(occ, hq_mask.rankEx, hq_mask.mask);
-		return not_own_color_occ & (file_attacks | rank_attacks);
+		return (file_attacks | rank_attacks);
 	}
-	static inline bitboard gen_attacks_queen(bitboard occ, uint nat_idx, bitboard not_own_color_occ)
+	static inline bitboard gen_attacks_queen(bitboard occ, uint nat_idx)
 	{
 		auto& hq_mask = hq_masks[nat_idx];
 		bitboard attacks = ops::hyperbola_quintessence(occ, hq_mask.diagEx, hq_mask.mask);
 		attacks |= ops::hyperbola_quintessence(occ, hq_mask.antidiagEx, hq_mask.mask);
 		attacks |= ops::hyperbola_quintessence(occ, hq_mask.fileEx, hq_mask.mask);
 		attacks |= ops::hyperbola_quintessence_for_ranks(occ, hq_mask.rankEx, hq_mask.mask);
-		return attacks & not_own_color_occ;
+		return attacks;
 	}
 
 	static inline uint is_square_attacked(bitboard attacks, square sq)
@@ -165,7 +165,7 @@ struct board
 	template<color VColor>
 	void do_move(const move& m)
 	{
-		constexpr color ecolor = static_cast<color>(1 - static_cast<uint>(VColor));
+		constexpr color ecolor = invert_color(VColor);
 		bitboard& own = get_board(m.get_moved_piece_type(),VColor);
 		bitboard from = m.get_from();
 		bitboard to = m.get_to();

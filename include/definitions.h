@@ -11,13 +11,29 @@ static_assert(sizeof(unsigned long long) == sizeof(uint64_t), "unsigned long lon
 
 enum class piece_type : uint
 {
-	pawn=0, rook, bishop, knight, king, queen, none
+	pawn=0, rook, bishop, knight, king, queen
 };
+
+struct attack_info
+{
+	bitboard attacks;
+	piece_type ptype;
+	unsigned int from;
+};
+
+typedef std::array<attack_info,64> attack_pattern;
 
 enum class color : uint
 {
 	white=0, black
 };
+
+constexpr inline color invert_color(color c)
+{
+	return static_cast<color>(1 - static_cast<uint>(c));
+}
+
+
 struct piece
 {
 	color c;
