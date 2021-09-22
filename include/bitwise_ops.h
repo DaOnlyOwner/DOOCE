@@ -87,15 +87,15 @@ namespace ops
 		return (b >> idx) & 1;
 	}
 
-	inline bitboard set_square_bit(square sq)
+	constexpr inline bitboard set_square_bit(square sq)
 	{
 		uint idx = sq_to_int(sq);
-		return 1UL << idx;
+		return 1ULL << idx;
 	}
 
 	inline bitboard set_nth_bit(uint n)
 	{
-		1ULL << n;
+		return 1ULL << n;
 	}
 
 	inline std::pair<uint, uint> from_idx(uint s)
@@ -143,5 +143,11 @@ namespace ops
 		bitboard left = (occ & attack_mask) >> shift_down;
 		return ((left - slider) ^ rev_bits(rev_bits(left) - rev_bits(slider))) << shift_down; // I don't need to & attack_mask because it is only limited to one byte and so already masked.
 	}
+
+	inline bitboard pop_lsb(bitboard b)
+	{
+		return b & (b - 1);
+	}
+
 }
 

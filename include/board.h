@@ -8,25 +8,40 @@
 #include "move.h"
 #include <string>
 
-
-// starting positions
+struct board_info
+{
+	bitboard own_bishops;
+	bitboard own_king;
+	bitboard own_knights;
+	bitboard own_pawns;
+	bitboard own_queens;
+	bitboard own_rooks;
+	bitboard enemy_bishops;
+	bitboard enemy_king;
+	bitboard enemy_knights;
+	bitboard enemy_queens;
+	bitboard enemy_pawns;
+	bitboard enemy_rooks;
+	bitboard own_color_occ;
+	bitboard enemy_color_occ;
+	bitboard not_own_color_occ;
+	bitboard occ;
+};
 
 struct board
 {
 
-
-
 	board();
-	board(const std::string& board);
+	board(const std::string& start);
 
-	bitboard get_start(piece_type type, color player);
 
+	static void print_bitboard(bitboard b);
 
 	static void init_knight_attacks();
 	static void init_hq_masks();
 	static void init_king_attacks();
 	// Attack generation.
-	inline bitboard gen_attacks_king(uint nat_idx) { return king_attacks[nat_idx]; };
+	static inline bitboard gen_attacks_king(uint nat_idx) { return king_attacks[nat_idx]; };
 
 	template<color VColor>
 	static inline bitboard gen_attack_pawns_left(bitboard own_pawns, bitboard enemy_occ)
@@ -49,7 +64,7 @@ struct board
 	{
 		if constexpr (VColor == color::white)
 			return ops::no(own_pawns) & notOcc;
-		else ops::so(own_pawns)& notOcc;
+		else return ops::so(own_pawns)& notOcc;
 	}
 
 	template<color VColor>
@@ -108,6 +123,13 @@ struct board
 		return attacks & (~ops::set_square_bit(sq));
 	}
 
+	template<color VColor>
+	static inline bool is_king_in_check(bitboard attacks)
+	{
+		constexpr square king_square = VColor == color::white ? square::e1 : square::e8;
+		return static_cast<bool>(is_square_attacked(attacks, king_square));
+	}
+
 	// TODO: Here add the king square to is_square_attacked.
 	template<color VColor>
 	static inline bool can_castle_kingside(bitboard occ, bitboard attacks)
@@ -148,7 +170,6 @@ struct board
 			~is_square_attacked(attacks, square::e8);
 
 	}
-
 
 	bitboard& get_board(piece_type ptype, color c)
 	{
@@ -198,6 +219,8 @@ struct board
 		}
 		break;
 
+		case move_type::pawn_single:
+		case move_type::pawn_double:
 		case move_type::quiet:
 			handle_quiet_move(own, from, to);
 			break;
@@ -283,6 +306,8 @@ struct board
 		}
 		break;
 
+		case move_type::pawn_single:
+		case move_type::pawn_double:
 		case move_type::quiet:
 			handle_quiet_move(own, to, from);
 			break;

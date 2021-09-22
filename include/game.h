@@ -3,41 +3,46 @@
 #include "move.h"
 #include "board.h"
 #include <optional>
+#include <string>
 
-struct board_info
+struct game_info
 {
-	bitboard own_bishops;
-	bitboard own_king;
-	bitboard own_knights;
-	bitboard own_pawns;
-	bitboard own_queens;
-	bitboard own_rooks;
-	bitboard enemy_bishops;
-	bitboard enemy_king;
-	bitboard enemy_knights;
-	bitboard enemy_queens;
-	bitboard enemy_pawns;
-	bitboard enemy_rooks;
-	bitboard own_color_occ;
-	bitboard enemy_color_occ;
-	bitboard not_own_color_occ;
-	bitboard occ;
+	bool has_moved_king;
+	bool has_moved_queenside_rook;
+	bool has_moved_kingside_rook;
 };
+
+
+/*
+struct perft_results
+{
+	uint64_t nodes = 1ULL;
+	uint64_t captures = 1ULL;
+	uint64_t en_passants = 1ULL;
+	uint64_t castles = 1ULL;
+	uint64_t promos = 1ULL;
+	uint64_t checkmates = 1ULL;
+};*/
 
 class game
 {
 public:
-	game();
+
+	game() :b(), start_info_white({ false,false,false }), start_info_black({ false,false,false }), start_color(color::white), start_en_passantable_pawn(0) {}
+	game(const std::string& start_board, const game_info& start_info_white, const game_info& start_info_black, color start_color, bitboard start_en_passantable_pawn)
+		: b(start_board), start_info_white(start_info_white),start_info_black(start_info_black),start_color(start_color), start_en_passantable_pawn(start_en_passantable_pawn){}
+
+	uint64_t perft(int depth);
 
 	// This method is basically only used for castling.
 	template<color VColor>
 	static bitboard gen_all_attacks_except_en_passant(/*bitboard en_passantable_pawn,*/ const board_info& info)
 	{
-		bitboard attacks = 
-			gen_all_attacks_from_piece_type(info.own_bishops, info.occ, &board::gen_attacks_bishop) |
-			gen_all_attacks_from_piece_type(info.own_rooks, info.occ,&board::gen_attacks_rook) |
-			gen_all_attacks_from_piece_type(info.own_queens, info.occ, &board::gen_attacks_queen) |
-			gen_all_attacks_from_piece_type(info.own_knights, info.occ,&board::gen_attacks_knight) |
+		bitboard attacks =
+			gen_all_attacks_from_sliding_piece_type(info.own_bishops, info.occ, &board::gen_attacks_bishop) |
+			gen_all_attacks_from_sliding_piece_type(info.own_rooks, info.occ, &board::gen_attacks_rook) |
+			gen_all_attacks_from_sliding_piece_type(info.own_queens, info.occ, &board::gen_attacks_queen) |
+			gen_all_attacks_from_piece_type(info.own_knights, info.occ, &board::gen_attacks_knight) |
 			gen_all_attacks_from_piece_type(info.own_king, info.occ, &board::gen_attacks_king);
 
 		attacks |= board::gen_attack_pawns_left<VColor>(info.own_pawns, info.enemy_color_occ);
@@ -50,13 +55,13 @@ public:
 
 	// This method is used to precalc the attack patterns to test if the enemy king is in check
 	template<color VColor>
-	static void gen_all_attack_info_except_en_passant(attack_pattern& pattern, int& size, const board_info& info)
+	static bitboard gen_all_attack_pattern_except_en_passant(attack_pattern& pattern, int& size, const board_info& info)
 	{
 		size = 0;
 		bitboard attacks =
-			gen_attack_info_from_piece_type(info.own_bishops, info, pattern, size, piece_type::bishop, &board::gen_attacks_bishop) |
-			gen_attack_info_from_piece_type(info.own_rooks, info, pattern, size, piece_type::rook, &board::gen_attacks_rook) |
-			gen_attack_info_from_piece_type(info.own_queens, info, pattern, size, piece_type::queen, &board::gen_attacks_queen) |
+			gen_attack_info_from_sliding_piece_type(info.own_bishops, info, pattern, size, piece_type::bishop, &board::gen_attacks_bishop) |
+			gen_attack_info_from_sliding_piece_type(info.own_rooks, info, pattern, size, piece_type::rook, &board::gen_attacks_rook) |
+			gen_attack_info_from_sliding_piece_type(info.own_queens, info, pattern, size, piece_type::queen, &board::gen_attacks_queen) |
 			gen_attack_info_from_piece_type(info.own_knights, info, pattern, size, piece_type::knight, &board::gen_attacks_knight) |
 			gen_attack_info_from_piece_type(info.own_king, info, pattern, size, piece_type::king, &board::gen_attacks_king) |
 			gen_attack_info_from_pawns<VColor>(info, pattern,size);
@@ -65,29 +70,100 @@ public:
 
 
 	template<color VColor>
-	static std::vector<move> gen_all_legal_moves(const attack_pattern& pattern, int size, const board_info& info, bitboard en_passantable_pawn)
+	static std::vector<move> gen_all_moves(const attack_pattern& pattern, int size, const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo)
 	{
 		std::vector<move> out;
 		out.reserve(650);
 		
+		// Attack pattern from previous is_king_in_check test
 		for (int i = 0; i<size; i++)
 		{
-			gen_moves_from_attack_pattern<VColor>(pattern, i, info, out);
+			game::gen_moves_from_attack_pattern<VColor>(pattern, i, info, out);
 		}
 
 		// en_passant
-		gen_move_en_passant_left<VColor>(info, en_passantable_pawn, out);
-		gen_move_en_passant_right<VColor>(info, en_passantable_pawn, out);
+		game::gen_move_en_passant<VColor>(info, en_passantable_pawn, out,&board::gen_en_passant_left<VColor>,&ops::so_ea,&ops::no_ea);
+		game::gen_move_en_passant<VColor>(info, en_passantable_pawn, out, &board::gen_en_passant_right<VColor>, &ops::so_we, &ops::no_we);
 
 		// pawn push
-		gen_move_pawn_push<VColor>(info, out);
+		game::gen_move_pawn_push<VColor>(info, out);
 
 		// castling
+		game::gen_move_castling<VColor>(info, ginfo, out);
+		return out;
 	}
 private:
 	board b;
+	game_info start_info_white;
+	game_info start_info_black;
+	color start_color;
+	bitboard start_en_passantable_pawn;
 	
+	template<color VColor>
+	uint64_t perft_inner(int depth, game_info& ginfo_own, game_info& ginfo_enemy, bitboard en_passantable_pawn, const attack_pattern& pattern, int size, const board_info& binfo)
+	{
+		constexpr color ecolor = invert_color(VColor);
+		if (depth == 0) return 1ULL;
+		uint64_t res = 0ULL;
+		std::vector<move> moves = game::gen_all_moves<VColor>(pattern, size, binfo, en_passantable_pawn, ginfo_own);
+		for (const move& m : moves)
+		{
+			b.do_move<VColor>(m);
+			auto [ginfo_own_after, en_passantable_pawn_after] = game::game_info_from_move<VColor>(m,ginfo_own);
+			board_info binfo_after;
+			game::extract_board<ecolor>(binfo_after);
+			attack_pattern pattern_after;
+			int size_after;
+			bitboard attacks = game::gen_all_attack_pattern_except_en_passant<ecolor>(pattern_after, size_after, binfo_after);
+			if (!board::is_king_in_check<ecolor>(attacks))
+			{
+				res += perft_inner<ecolor>(depth - 1, ginfo_enemy, ginfo_own_after, en_passantable_pawn_after, pattern_after, size_after, binfo_after);
+			}
+			b.undo_move<VColor>(m);
+		}
+		return res;
+	}
+
+	template<color VColor>
+	static std::pair<game_info, bitboard> game_info_from_move(const move& m, const game_info& previous_info)
+	{
+		constexpr square rook_queenside = VColor == color::white ? square::a1 : square::a8;
+		constexpr square rook_kingside = VColor == color::white ? square::h1 : square::h8;
+		game_info gi;
+		gi.has_moved_king = (m.get_moved_piece_type() == piece_type::king || previous_info.has_moved_king);
+		gi.has_moved_kingside_rook = ((m.get_moved_piece_type() == piece_type::rook && (idx_to_sq(m.get_from_as_idx()) == rook_kingside)) || previous_info.has_moved_kingside_rook); // Here and next stmt not accounting for castling, but that doesn't matter because then has_moved_king is set to true.
+		gi.has_moved_kingside_rook = ((m.get_moved_piece_type() == piece_type::rook && (idx_to_sq(m.get_from_as_idx()) == rook_queenside)) || previous_info.has_moved_queenside_rook);
+		bitboard en_passantable_pawn = 0ULL;
+		if (m.get_move_type() == move_type::pawn_double)
+			en_passantable_pawn = m.get_to();		
+
+		return std::make_pair(gi, en_passantable_pawn);
+	}
+
 	static void push_promo_moves(std::vector<move>& out, move& m);
+
+	template<color VColor>
+	static void gen_move_castling(const board_info& info, const game_info& ginfo, std::vector<move>& out)
+	{
+		constexpr color ecolor = invert_color(VColor);
+		bitboard attacks = game::gen_all_attacks_except_en_passant<ecolor>(info);
+		bool can_castle_kingside = board::can_castle_kingside<VColor>(info.occ, attacks) && !ginfo.has_moved_king && !ginfo.has_moved_kingside_rook;
+		bool can_castle_queenside = board::can_castle_queenside<VColor>(info.occ, attacks) && !ginfo.has_moved_king && !ginfo.has_moved_queenside_rook;
+		move_type mtype;
+		piece_type moved = (piece_type::king);
+		if (can_castle_kingside)
+		{
+			mtype = (move_type::king_castle);
+			move m(0, 0, moved, {}, {}, mtype);
+			out.push_back(m);
+		}
+		if (can_castle_queenside)
+		{
+			mtype = (move_type::queen_castle);
+			move m(0, 0, moved, {}, {}, mtype);
+			out.push_back(m);
+		}
+	}
 
 
 	template<color VColor>
@@ -101,19 +177,28 @@ private:
 			bitboard set_bit = ops::set_nth_bit(idx);
 			move m{};
 			m.set_from(idx);
-			m.set_to(board::gen_move_pawns_single<VColor>(set_bit, info.not_own_color_occ));
+			uint to = ops::num_trailing_zeros(board::gen_move_pawns_single<VColor>(set_bit, info.not_own_color_occ));
+			m.set_to(to);
 			m.set_moved_piece_type(piece_type::pawn);
-			m.set_move_type(move_type::quiet);
+			m.set_move_type(move_type::pawn_single);
 			out.push_back(m);
-			m.set_to(board::gen_move_pawns_dbl<VColor>(set_bit, info.not_own_color_occ));
+			to = ops::num_trailing_zeros(board::gen_move_pawns_dbl<VColor>(set_bit, info.not_own_color_occ));
+			if (to == 0ULL)
+			{
+				cpy = ops::pop_lsb(cpy);
+				continue;
+			}
+			m.set_to(to);
+			m.set_move_type(move_type::pawn_double);
 			out.push_back(m);
+			cpy = ops::pop_lsb(cpy);
 		}
 	}
 
-	template<color VColor>
-	static void gen_move_en_passant_left(const board_info& info, bitboard en_passantable_pawn, std::vector<move>& out)
+	template<color VColor, typename EnPassantFunc, typename ShiftFuncWhite, typename ShiftFuncBlack>
+	static void gen_move_en_passant(const board_info& info, bitboard en_passantable_pawn, std::vector<move>& out, EnPassantFunc en_passant_fn, ShiftFuncWhite shift_white, ShiftFuncBlack shift_black)
 	{
-		bitboard attack = board::gen_en_passant_left(info.own_pawns, en_passantable_pawn);
+		bitboard attack = en_passant_fn(info.own_pawns, en_passantable_pawn);
 		if (attack != 0)
 		{
 			move m{};
@@ -121,26 +206,8 @@ private:
 			m.set_moved_piece_type(piece_type::pawn);
 			m.set_move_type(move_type::en_passant);
 			if constexpr (VColor == color::white)
-				m.set_from(ops::num_trailing_zeros(ops::so_ea(attack)));
-			else m.set_from(ops::num_trailing_zeros(ops::no_ea(attack)));
-			m.set_to(ops::num_trailing_zeros(attack));
-			out.push_back(m);
-		}
-	}
-
-	template<color VColor>
-	static void gen_move_en_passant_right(const board_info& info, bitboard en_passantable_pawn, std::vector<move>& out)
-	{
-		bitboard attack = board::gen_en_passant_left(info.own_pawns, en_passantable_pawn);
-		if (attack != 0)
-		{
-			move m{};
-			m.set_captured_piece_type(piece_type::pawn);
-			m.set_moved_piece_type(piece_type::pawn);
-			m.set_move_type(move_type::en_passant);
-			if constexpr (VColor == color::white)
-				m.set_from(ops::num_trailing_zeros(ops::so_we(attack)));
-			else m.set_from(ops::num_trailing_zeros(ops::no_we(attack)));
+				m.set_from(ops::num_trailing_zeros(shift_white(attack)));
+			else m.set_from(ops::num_trailing_zeros(shift_black(attack)));
 			m.set_to(ops::num_trailing_zeros(attack));
 			out.push_back(m);
 		}
@@ -158,8 +225,8 @@ private:
 			idx = ops::num_trailing_zeros(cpy);
 			bitboard set_bit = ops::set_nth_bit(idx);
 			auto captured = determine_capturing(info, set_bit);
-			m.set_from(from);
-			m.set_to(to);
+			m.set_from(ainfo.from);
+			m.set_to(idx);
 			m.set_moved_piece_type(ainfo.ptype);
 			m.set_captured_piece_type(captured);
 			bool promo = determine_promo<VColor>(ainfo.ptype, info, set_bit);
@@ -176,13 +243,14 @@ private:
 				m.set_move_type(mtype);
 				out.push_back(m);
 			}
+			cpy = ops::pop_lsb(cpy);
 		}
 	}
 
 	template<color VColor>
-	static bool determine_promo(const attack_info& ainfo, const board_info& info, bitboard set_bit)
+	static bool determine_promo(piece_type ptype, const board_info& info, bitboard set_bit)
 	{
-		if (ainfo.ptype != piece_type::pawn) return {};
+		if (ptype != piece_type::pawn) return {};
 		if constexpr (VColor == color::white)
 			return ops::has_bit_set_on_rank(set_bit, 8);
 		else return ops::has_bit_set_on_rank(set_bit, 1);
@@ -205,17 +273,22 @@ private:
 	{
 		bitboard attacks = 0ULL;
 		bitboard own_pawns = info.own_pawns;
-		while (own_pawns != 0)
+		uint idx = 0;
+		while (own_pawns != 0ULL)
 		{
-			idx += ops::num_trailing_zeros(own_pawns);
+			idx = ops::num_trailing_zeros(own_pawns);
 			bitboard only_pawn = ops::set_nth_bit(idx);
 			attack_info ainfo;
 			ainfo.attacks = board::gen_attack_pawns_left<VColor>(only_pawn, info.enemy_color_occ);
 			ainfo.attacks |= board::gen_attack_pawns_right<VColor>(only_pawn, info.enemy_color_occ);
-			ainfo.from = idx;
-			ainfo.ptype = piece_type::pawn;
-			pattern[size++] = ainfo;
-			attacks |= ainfo.attacks;
+			if (ainfo.attacks != 0ULL)
+			{
+				ainfo.from = idx;
+				ainfo.ptype = piece_type::pawn;
+				pattern[size++] = ainfo;
+				attacks |= ainfo.attacks;
+			}
+			own_pawns = ops::pop_lsb(own_pawns);
 		}
 
 		return attacks;
@@ -223,20 +296,45 @@ private:
 
 
 	template<typename GenFn>
-	static bitboard gen_attack_info_from_piece_type(bitboard piece_occ, const board_info& info, attack_pattern& pattern, int& size, piece_type ptype, GenFn fn)
+	static bitboard gen_attack_info_from_sliding_piece_type(bitboard piece_occ, const board_info& info, attack_pattern& pattern, int& size, piece_type ptype, GenFn fn)
 	{
 		uint idx = 0;
 		bitboard attacks = 0ULL;
-		while (piece_occ != 0)
+		while (piece_occ != 0ULL)
 		{
 			idx = ops::num_trailing_zeros(piece_occ);
 			attack_info ainfo;
 			ainfo.attacks = fn(info.occ, idx) & info.not_own_color_occ;
-			ainfo.from = idx;
-			ainfo.ptype = ptype;
-			pattern[size++] = pa;
-			piece_occ &= piece_occ - 1;
-			attacks |= ainfo.attacks;
+			if (ainfo.attacks != 0ULL)
+			{
+				ainfo.from = idx;
+				ainfo.ptype = ptype;
+				pattern[size++] = ainfo;
+				attacks |= ainfo.attacks;
+			}
+			piece_occ = ops::pop_lsb(piece_occ);
+		}
+		return attacks;
+	}
+
+	template<typename GenFn>
+	static bitboard gen_attack_info_from_piece_type(bitboard piece_occ, const board_info& info, attack_pattern& pattern, int& size, piece_type ptype, GenFn fn)
+	{
+		uint idx = 0;
+		bitboard attacks = 0ULL;
+		while (piece_occ != 0ULL)
+		{
+			idx = ops::num_trailing_zeros(piece_occ);
+			attack_info ainfo;
+			ainfo.attacks = fn(idx) & info.not_own_color_occ;
+			if (ainfo.attacks != 0ULL)
+			{
+				ainfo.from = idx;
+				ainfo.ptype = ptype;
+				pattern[size++] = ainfo;
+				attacks |= ainfo.attacks;
+			}
+			piece_occ = ops::pop_lsb(piece_occ);
 		}
 		return attacks;
 	}
@@ -246,8 +344,22 @@ private:
 	static bitboard gen_all_attacks_from_piece_type(bitboard piece_occ, bitboard occ, GenFn fn)
 	{
 		uint idx = 0;
-		bitboard attacks = 0;
-		while (piece_occ != 0)
+		bitboard attacks = 0ULL;
+		while (piece_occ != 0ULL)
+		{
+			idx = ops::num_trailing_zeros(piece_occ);
+			attacks |= fn(idx);
+			piece_occ &= piece_occ - 1;
+		}
+		return attacks;
+	}
+
+	template<typename GenFn>
+	static bitboard gen_all_attacks_from_sliding_piece_type(bitboard piece_occ, bitboard occ, GenFn fn)
+	{
+		uint idx = 0;
+		bitboard attacks = 0ULL;
+		while (piece_occ != 0ULL)
 		{
 			idx = ops::num_trailing_zeros(piece_occ);
 			attacks |= fn(occ, idx);
@@ -256,8 +368,9 @@ private:
 		return attacks;
 	}
 
+
 	template<color VColor>
-	static void extract_board(board_info& info)
+	void extract_board(board_info& info)
 	{
 		constexpr color ecolor = invert_color(VColor);
 		info.own_bishops = b.get_board(piece_type::bishop, VColor);
@@ -281,203 +394,3 @@ private:
 	}
 };
 
-
-#if 0
-class game
-{
-
-public:
-	game();
-
-	template<color VColor>
-	std::vector<move> gen_all_legal_moves(bitboard* all_attacks_out)
-	{
-		std::vector<move> out;
-		out.reserve(150);
-
-		bitboard cpy;
-		if constexpr (VColor == color::white)
-			cpy = current_board.white_board;
-		else cpy = current_board.black_board;
-		bitboard all_occ = current_board.white_board & current_board.black_board;
-		bitboard not_all_occ = ~all_occ;
-		bitboard not_color_occ;
-		bitboard all_attacks = 0;
-
-		if constexpr (VColor == color::white)
-			not_color_occ = ~current_board.white_board;
-		else not_color_occ = ~current_board.black_board;
-
-		uint idx = 0;
-		while (cpy != 0)
-		{
-			idx += ops::num_trailing_zeros(cpy);
-			auto p = current_board.mb_board.repr[idx];
-			switch (p.type)
-			{
-			case piece_type::bishop:
-				bitboard b_attacks = current_board.gen_attacks_bishop(all_occ, idx, not_color_occ);
-				all_attacks |= b_attacks;
-				make_move(b_attacks, idx, out, current_board.mb_board, VColor);
-				break;
-			case piece_type::king:
-				bitboard k_attacks = current_board.gen_attacks_king(idx, not_color_occ);
-				all_attacks |= k_attacks;
-				make_move(k_attacks, idx, out, current_board.mb_board, VColor);
-				break;
-			case piece_type::knight:
-				bitboard kn_attacks = current_board.gen_attacks_knight(idx, not_color_occ);
-				all_attacks |= kn_attacks;
-				make_move(kn_attacks, idx, out, current_board.mb_board, VColor);
-				break;
-			case piece_type::queen:
-				bitboard q_attacks = current_board.gen_attacks_queen(all_occ, idx, not_color_occ);
-				all_attacks |= q_attacks;
-				make_move(q_attacks, idx, out, current_board.mb_board, VColor);
-				break;
-			case piece_type::rook:
-				bitboard r_attacks = current_board.gen_attacks_rook(all_occ, idx, not_color_occ);
-				all_attacks |= r_attacks;
-				make_move(r_attacks, idx, out, current_board.mb_board, VColor);
-				break;
-			case piece_type::pawn:
-				bitboard pawn_bit = ops::set_nth_bit(idx);
-				if constexpr (VColor == color::white)
-				{
-					bitboard p_attacks = current_board.gen_attack_pawns_left_white(pawn_bit, current_board.black_board);
-					p_attacks |= current_board.gen_attack_pawns_right_white(pawn_bit, current_board.black_board);
-					all_attacks |= p_attacks;
-					make_pawn_attack_move<color::white>(p_attacks, idx, out, current_board.mb_board);
-					bitboard dbl_move = current_board.gen_move_pawns_dbl_white(pawn_bit, not_all_occ);
-					make_move(dbl_move, idx, out, current_board.mb_board, color::white);
-					bitboard pawn_single_move = current_board.gen_move_pawns_single_white(pawn_bit, not_all_occ);
-					make_pawn_single_push_move<color::white>(pawn_single_move, idx, out);
-				}
-				else
-				{
-					bitboard p_attacks = current_board.gen_attack_pawns_left_black(pawn_bit, current_board.white_board);
-					p_attacks |= current_board.gen_attack_pawns_right_black(pawn_bit, current_board.white_board);
-					all_attacks |= p_attacks;
-					make_pawn_attack_move<color::black>(p_attacks, idx, out, current_board.mb_board);
-					bitboard pawn_dbl_move = current_board.gen_move_pawns_dbl_black(pawn_bit, not_all_occ);
-					make_move(pawn_dbl_move, idx, out, current_board.mb_board, color::black);
-					bitboard pawn_single_move = current_board.gen_move_pawns_single_black(pawn_bit, not_all_occ);
-					make_pawn_single_push_move<color::black>(pawn_single_move,idx,out);
-				}
-				break;
-			default:
-				break;
-
-			}
-			cpy &= cpy - 1;
-		}
-
-		if constexpr (c = color::white)
-		{
-			if (!moved_king_white && !moved_rook_kingside_white && current_board.can_castle_kingside_white(all_occ, all_attacks))
-			{
-				move m;
-				m.type_of_move = move_type::castling_kingside;
-				out.push_back(m);
-			}
-
-			if (!moved_king_white && !moved_rook_queenside_white && current_board.can_castle_queenside_white(all_occ, all_attacks))
-			{
-				move m;
-				m.type_of_move = move_type::castling_queenside;
-				out.push_back(m);
-			}
-
-			*all_attacks_out = all_attacks;
-		}
-
-
-	}
-
-private:
-	void make_move(bitboard attacks, uint from, std::vector<move>& out, const mailbox& mb_board, color c);
-
-
-	
-	template<color VColor>
-	void make_pawn_single_push_move(bitboard attacks, uint from, std::vector<move>& out)
-	{
-		move m;
-		m.from = from;
-		m.to = ops::num_trailing_zeros(attacks);
-		m.piece_captured = { color::white,piece_type::none };
-		m.piece_moved = piece_type::pawn;
-		if constexpr (c == color::white)
-		{
-			bool on_8th_rank = (ops::mask_rank(8) & attacks) > 0;
-			if(on_8th_rank) add_promo_moves(m, out);
-			else {
-				m.type_of_move = move_type::quiet;
-				out.push_back(m);
-			}
-		}
-
-		else
-		{
-			bool on_1st_rank = (ops::mask_rank(1) & attacks) > 0; 
-			if (on_1st_rank) add_promo_moves(m, out);
-			else {
-				m.type_of_move = move_type::quiet;
-				out.push_back(m);
-			}
-		}
-	}
-
-	template<color VColor>
-	void make_pawn_attack_move(bitboard attacks, uint from, std::vector<move>& out, const mailbox& mb_board)
-	{
-		uint idx = 0;
-		while (attacks)
-		{
-			move m;
-			idx = ops::num_trailing_zeros(attacks);
-			m.from = from;
-			m.to = idx;
-			m.piece_moved = mb_board.repr[from].type;
-			m.piece_captured = { VColor,mb_board.repr[idx].type };
-			
-			if constexpr (c == color::white)
-			{
-				bool on_8th_rank = (ops::mask_rank(8) & attacks) > 0;
-				if (on_8th_rank) add_promo_capture_moves(m, out);
-				else
-				{
-					m.type_of_move = move_type::captures;
-					out.push_back(m);
-				}
-			}
-
-			else
-			{
-				bool on_1st_rank = (ops::mask_rank(1) & attacks) > 0;
-				if (on_1st_rank) add_promo_capture_moves(m, out);
-				else
-				{
-					m.type_of_move = move_type::captures;
-					out.push_back(m);
-				}
-			}
-			attacks &= attacks - 1;
-		}
-	}
-
-	
-	void add_promo_moves(move& m, std::vector<move>& out);
-	void add_promo_capture_moves(move& m, std::vector<move>& out);
-
-	std::vector<move> move_list;
-	bool moved_king_white,
-		moved_king_black,
-		moved_rook_queenside_white,
-		moved_rook_queenside_black,
-		moved_rook_kingside_white,
-		moved_rook_kingside_black;
-	board current_board;
-};
-
-#endif

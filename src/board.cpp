@@ -1,205 +1,12 @@
 #include "board.h"
 #include "bitwise_ops.h"
 #include <cstring>
+#include <map>
+#include <cstdio>
 
 std::array<bitboard, 64> board::knight_attacks;
 std::array<bitboard, 64> board::king_attacks;
 std::array<board::hq_mask, 64> board::hq_masks;
-
-/*
-board::board()
-{
-	white_board = bitboard_constr(
-		"00000000"
-		"00000000"
-		"00000000"
-		"00000000"
-		"00000000"
-		"00000000"
-		"11111111"
-		"11111111").to_ullong();
-
-	black_board = bitboard_constr(
-		"11111111"
-		"11111111"
-		"00000000"
-		"00000000"
-		"00000000"
-		"00000000"
-		"00000000"
-		"00000000").to_ullong();
-
-}
-
-board::board(const std::string& board)
-{
-	bitboard_constr constr_black;
-	bitboard_constr constr_white;
-
-	for (int i = 0; i<64; i++)
-	{
-		char c = board[i];
-		if (isupper(c)) constr_white.set(ops::flip_idx(i));
-		else constr_black.set(ops::flip_idx(i));
-	}
-
-}
-
-bitboard board::get_start(piece_type type, color player)
-{
-	switch (type)
-	{
-	case piece_type::pawn:
-		if (player == color::black)
-			return bitboard_constr{
-				"00000000"
-				"11111111"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-		}.to_ullong();
-		if (player == color::white)
-			return bitboard_constr{
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"11111111"
-				"00000000"
-		}.to_ullong();
-		break;
-	case piece_type::rook:
-		if (player == color::black)
-			return bitboard_constr{
-				"10000001"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-		}.to_ullong();
-		if (player == color::white)
-			return bitboard_constr{
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"10000001"
-		}.to_ullong();
-
-		break;
-	case piece_type::bishop:
-		if (player == color::black)
-			return bitboard_constr{
-				"01000010"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-		}.to_ullong();
-		if (player == color::white)
-			return bitboard_constr{
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"01000010"
-		}.to_ullong();
-		break;
-	case piece_type::knight:
-		if (player == color::black)
-			return bitboard_constr{
-				"00100100"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-		}.to_ullong();
-		if (player == color::white)
-			return bitboard_constr{
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00100100"
-		}.to_ullong();
-		break;
-	case piece_type::king:
-		if (player == color::black)
-			return bitboard_constr{
-				"00001000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-		}.to_ullong();
-		if (player == color::white)
-			return bitboard_constr{
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00001000"
-		}.to_ullong();
-		break;
-	case piece_type::queen:
-		if (player == color::black)
-			return bitboard_constr{
-				"00010000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-		}.to_ullong();
-		if (player == color::white)
-			return bitboard_constr{
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00000000"
-				"00010000"
-		}.to_ullong();
-		break;
-	default:
-		break;
-	}
-}
-*/
-
 
 namespace
 {
@@ -251,6 +58,49 @@ namespace
 		uint idx = ops::to_idx(x, y);
 		return (bc << (idx & 56)) ^ (bitboard_constr(1) << idx);
 	}
+}
+
+board::board() :board(
+	"rnbqkbkr"
+	"pppppppp"
+	"........"
+	"........"
+	"........"
+	"........"
+	"PPPPPPPP"
+	"RNBQKBKR"
+) {}
+
+board::board(const std::string& start)
+	:boards{}
+{
+	std::map<char, bitboard*> charBitboardMap =
+	{
+		{'N',&get_board(piece_type::knight,color::white)},
+		{'K',&get_board(piece_type::king,color::white)},
+		{'Q',&get_board(piece_type::queen,color::white)},
+		{'B',&get_board(piece_type::bishop,color::white)},
+		{'R',&get_board(piece_type::rook,color::white)},
+		{'P',&get_board(piece_type::pawn,color::white)},
+
+		{'n',&get_board(piece_type::knight,color::black)},
+		{'k',&get_board(piece_type::king,color::black)},
+		{'q',&get_board(piece_type::queen,color::black)},
+		{'b',&get_board(piece_type::bishop,color::black)},
+		{'r',&get_board(piece_type::rook,color::black)},
+		{'p',&get_board(piece_type::pawn,color::black)}
+	};
+	for (int i = 0; i<start.size(); i++)
+	{
+		char c = start[i];
+		if (c == '.') continue;
+		bitboard* b = charBitboardMap[c];
+		*b |= ops::set_nth_bit(ops::flip_idx(i));
+	}
+}
+
+void board::print_bitboard(bitboard b)
+{
 }
 
 void board::init_knight_attacks()

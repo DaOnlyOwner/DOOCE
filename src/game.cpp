@@ -50,6 +50,24 @@ void game::make_move(bitboard attacks, uint from, std::vector<move>& out, const 
 }
 #endif
 
+
+
+uint64_t game::perft(int depth)
+{
+	board_info binfo;
+	if (start_color == color::white)
+		game::extract_board<color::white>(binfo);
+	else game::extract_board<color::black>(binfo);
+	attack_pattern pattern;
+	int size;
+	if(start_color == color::white)
+		game::gen_all_attack_pattern_except_en_passant<color::white>(pattern, size, binfo);
+	else game::gen_all_attack_pattern_except_en_passant<color::black>(pattern, size, binfo);
+	if(start_color == color::white)
+		return perft_inner<color::white>(depth, start_info_white, start_info_black, start_en_passantable_pawn, pattern, size, binfo);
+	else return perft_inner<color::black>(depth, start_info_black, start_info_white, start_en_passantable_pawn, pattern, size, binfo);
+}
+
 void game::push_promo_moves(std::vector<move>& out, move& m)
 {
 	m.set_promo_piece_type(piece_type::knight);

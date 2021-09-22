@@ -6,8 +6,8 @@
 enum class move_type : uint
 {
 	quiet=0,
-	//pawn_single,
-	//pawn_double,
+	pawn_single,
+	pawn_double,
 	king_castle,
 	queen_castle,
 	captures,
@@ -24,6 +24,10 @@ struct move
 	std::optional<piece_type> promo;
 	move_type mtype;
 
+	move() = default;
+
+	move(uint from, uint to, piece_type moved, piece_type captured, piece_type promo, move_type mtype)
+		:from(from),to(to),moved(moved),captured(captured),promo(promo),mtype(mtype){}
 
 	void set_from(uint from)
 	{
@@ -55,29 +59,44 @@ struct move
 		this->mtype = mtype;
 	}
 
-	bitboard get_from()
+	bitboard get_from() const
 	{
 		return ops::set_nth_bit(from);
 	}
 
-	bitboard get_to()
+	bitboard get_to() const
 	{
 		return ops::set_nth_bit(to);
 	}
 
-	piece_type get_moved_piece_type()
+	uint get_from_as_idx() const
+	{
+		return from;
+	}
+
+	uint get_to_as_idx() const
+	{
+		return to;
+	}
+
+	move_type get_move_type() const
+	{
+		return mtype;
+	}
+
+	piece_type get_moved_piece_type() const
 	{
 		return moved;
 	}
 
 	// Only call when checked that move_type == captures or promo_captures
-	piece_type get_captured_piece_type()
+	piece_type get_captured_piece_type() const
 	{
 		return captured.value();
 	}
 
 	// Only call when move_type == promo or promo_captures
-	piece_type get_promo_piece_type()
+	piece_type get_promo_piece_type() const
 	{
 		return promo.value();
 	}
