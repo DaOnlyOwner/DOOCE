@@ -61,14 +61,14 @@ namespace
 }
 
 board::board() :board(
-	"rnbqkbkr"
+	"rnbqkbnr"
 	"pppppppp"
 	"........"
 	"........"
 	"........"
 	"........"
 	"PPPPPPPP"
-	"RNBQKBKR"
+	"RNBQKBNR"
 ) {}
 
 board::board(const std::string& start)
@@ -101,6 +101,19 @@ board::board(const std::string& start)
 
 void board::print_bitboard(bitboard b)
 {
+	bitboard mask = 1ULL << 63ULL;
+	for (int x = 0; x < 8; x++)
+	{
+		for (int y = 0; y < 8; y++)
+		{
+			if (b & mask)
+				printf("1 ");
+			else printf("0 ");
+			mask >>= 1;
+		}
+		printf("\n");
+	}
+	printf("\n");
 }
 
 void board::init_knight_attacks()
@@ -153,7 +166,8 @@ void board::init_hq_masks()
 			mask.rankEx = rank.to_ullong();
 			bitboard_constr mask_constr(0);
 			mask_constr.set(idx, true);
-			mask.mask = 2 * mask_constr.to_ullong();
+			bitboard m = mask_constr.to_ullong();
+			mask.mask = m;
 			hq_masks[idx] = mask;
 		}
 	}
@@ -186,41 +200,4 @@ void board::init_king_attacks()
 	}
 }
 
-/*
-bool board::do_move_black(const move& m)
-{
-	// Set nth bit
-	bitboard move_to_bit = 1UL << m.to;
-	bitboard move_from_bit = (1UL << m.from);
-	black_board = (black_board | move_to_bit) & ~move_from_bit; // clears the from bit from the black board.
-	white_board &= ~move_to_bit; // If on the white board the move_to bit is set, then we remove it
-	en_passantable_pawns_black = (static_cast<bitboard>(m.type_of_move == move_type::pawn_double) << m.to) & move_to_bit;
-	mb_board.do_move(m);
-	return en_passantable_pawns_black > 0;
-}
-
-void board::undo_move_black(const move& m)
-{
-	// Set nth bit
-	bitboard move_to_bit = 1UL << m.to;
-	bitboard move_from_bit = (1UL << m.from);
-	black_board = (black_board | move_from_bit) & ~move_to_bit;
-	black_board &= static_cast<bitboard>(m.piece_captured.type != piece_type::none) << m.from;
-	en_passantable_pawns_black = (static_cast<bitboard>(m.was_en_passantable) << m.from) & move_from_bit; // Sets the nth bit if the move to undo resets the state to an en passantable pawn. 
-	mb_board.undo_move(m);
-}
-*/
-
-
-/*move_gen_helper::first_rank_attacks_lt move_gen_helper::init_fra()
-{
-	move_gen_helper::first_rank_attacks_lt fra;
-	for (int i = 0; i < 8; i++)
-	{
-		for (int i = 0; i < 64; i++)
-		{
-
-		}
-	}
-}*/
 

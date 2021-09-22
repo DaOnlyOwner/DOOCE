@@ -105,6 +105,7 @@ private:
 		constexpr color ecolor = invert_color(VColor);
 		if (depth == 0) return 1ULL;
 		uint64_t res = 0ULL;
+		board::print_bitboard(pattern[0].attacks);
 		std::vector<move> moves = game::gen_all_moves<VColor>(pattern, size, binfo, en_passantable_pawn, ginfo_own);
 		for (const move& m : moves)
 		{
@@ -115,7 +116,8 @@ private:
 			attack_pattern pattern_after;
 			int size_after;
 			bitboard attacks = game::gen_all_attack_pattern_except_en_passant<ecolor>(pattern_after, size_after, binfo_after);
-			if (!board::is_king_in_check<ecolor>(attacks))
+			bitboard king = b.get_board(piece_type::king, VColor); // Test if our king is in check, and if not the move was legal.
+			if (!board::is_king_in_check(king,attacks))
 			{
 				res += perft_inner<ecolor>(depth - 1, ginfo_enemy, ginfo_own_after, en_passantable_pawn_after, pattern_after, size_after, binfo_after);
 			}
@@ -185,13 +187,13 @@ private:
 			to = ops::num_trailing_zeros(board::gen_move_pawns_dbl<VColor>(set_bit, info.not_own_color_occ));
 			if (to == 0ULL)
 			{
-				cpy = ops::pop_lsb(cpy);
+				ops::pop_lsb(cpy);
 				continue;
 			}
 			m.set_to(to);
 			m.set_move_type(move_type::pawn_double);
 			out.push_back(m);
-			cpy = ops::pop_lsb(cpy);
+			ops::pop_lsb(cpy);
 		}
 	}
 
@@ -243,7 +245,7 @@ private:
 				m.set_move_type(mtype);
 				out.push_back(m);
 			}
-			cpy = ops::pop_lsb(cpy);
+			ops::pop_lsb(cpy);
 		}
 	}
 
@@ -288,7 +290,7 @@ private:
 				pattern[size++] = ainfo;
 				attacks |= ainfo.attacks;
 			}
-			own_pawns = ops::pop_lsb(own_pawns);
+			ops::pop_lsb(own_pawns);
 		}
 
 		return attacks;
@@ -312,7 +314,7 @@ private:
 				pattern[size++] = ainfo;
 				attacks |= ainfo.attacks;
 			}
-			piece_occ = ops::pop_lsb(piece_occ);
+			ops::pop_lsb(piece_occ);
 		}
 		return attacks;
 	}
@@ -334,7 +336,7 @@ private:
 				pattern[size++] = ainfo;
 				attacks |= ainfo.attacks;
 			}
-			piece_occ = ops::pop_lsb(piece_occ);
+			ops::pop_lsb(piece_occ);
 		}
 		return attacks;
 	}
@@ -349,7 +351,7 @@ private:
 		{
 			idx = ops::num_trailing_zeros(piece_occ);
 			attacks |= fn(idx);
-			piece_occ &= piece_occ - 1;
+			ops::pop_lsb(piece_occ);
 		}
 		return attacks;
 	}
