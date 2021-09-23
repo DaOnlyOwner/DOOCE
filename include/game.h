@@ -35,6 +35,8 @@ public:
 
 	perft_results perft(int depth);
 
+	bool is_king_in_check()
+
 	// This method is basically only used for castling.
 	template<color VColor>
 	static bitboard gen_all_attacks_except_en_passant(/*bitboard en_passantable_pawn,*/ const board_info& info)
@@ -73,6 +75,7 @@ public:
 	template<color VColor>
 	static std::vector<move> gen_all_moves(const attack_pattern& pattern, int size, const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo)
 	{
+		//board::print_bitboard(pattern[0].attacks);
 		std::vector<move> out;
 		out.reserve(250);
 		
@@ -150,12 +153,16 @@ private:
 				auto res = perft_inner<ecolor>(depth - 1, ginfo_enemy, ginfo_own_after, en_passantable_pawn_after, pattern_after, size_after, binfo_after, m);
 				update_perft_results(res, res_overall);
 			}
+			/*else
+			{
+				printf("Attacks enemy: \n");
+				board::print_bitboard(attacks);
+				board::print_bitboard(king);
+			}*/
 			b.undo_move<VColor>(m);
 		}
 		return res_overall;
 	}
-
-
 
 	template<color VColor>
 	static std::pair<game_info, bitboard> game_info_from_move(const move& m, const game_info& previous_info)
@@ -296,17 +303,7 @@ private:
 		else return ops::has_bit_set_on_rank(set_bit, 1);
 	}
 
-	static std::optional<piece_type> determine_capturing(const board_info& info, bitboard set_bit)
-	{
-		bitboard not_set_bit = ~set_bit;
-		std::optional<piece_type> ptype;
-		if ((info.enemy_pawns & not_set_bit) != info.enemy_pawns) ptype = piece_type::pawn;
-		else if ((info.enemy_bishops & not_set_bit) != info.enemy_bishops) ptype = piece_type::bishop;
-		else if ((info.enemy_knights & not_set_bit) != info.enemy_knights) ptype = piece_type::knight;
-		else if ((info.enemy_rooks & not_set_bit) != info.enemy_rooks) ptype = piece_type::rook;
-		else if ((info.enemy_queens & not_set_bit) != info.enemy_queens) ptype = piece_type::queen;
-		return ptype;
-	}
+	static std::optional<piece_type> determine_capturing(const board_info& info, bitboard set_bit);
 
 	template<color VColor>
 	static bitboard gen_attack_info_from_pawns(const board_info& info, attack_pattern& pattern, int& size)

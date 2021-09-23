@@ -98,6 +98,14 @@ struct board
 	static inline bitboard gen_attacks_bishop(bitboard occ, uint natural_idx)
 	{
 		auto& mask = hq_masks[natural_idx];
+		/*printf("Test: masks \n");
+		print_bitboard(occ);
+		print_bitboard(mask.diagEx);
+		print_bitboard(mask.antidiagEx);
+		auto a = ops::hyperbola_quintessence(occ, mask.diagEx, mask.mask);
+		auto b = ops::hyperbola_quintessence(occ, mask.antidiagEx, mask.mask);
+		print_bitboard(a);
+		print_bitboard(b);*/
 		return (ops::hyperbola_quintessence(occ, mask.diagEx, mask.mask) |
 			ops::hyperbola_quintessence(occ, mask.antidiagEx, mask.mask));
 	}

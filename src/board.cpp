@@ -31,15 +31,13 @@ namespace
 	{
 		bitboard_constr bc(0);
 		// This is init, so don't care about performance
-		for (uint i = 0; i < 8; i++)
+		for (int i = -8; i <= 8; i++)
 		{
-			uint y_off = (y + x) - i;
-			uint x_off = i + 8;
+			int y_off = y + i;
+			int x_off = x - i;
 
 			if (ops::contains(x_off, y_off) && (x != x_off && y != y_off))
 				bc.set(ops::to_idx(x_off, y_off), true);
-			else if (!ops::contains(x_off, y_off))
-				break;
 		}
 		return bc;
 	}

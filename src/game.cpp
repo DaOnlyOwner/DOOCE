@@ -27,6 +27,19 @@ perft_results game::perft(int depth)
 	else return perft_inner<color::black>(depth, start_info_black, start_info_white, start_en_passantable_pawn, pattern, size, binfo,m);
 }
 
+
+std::optional<piece_type> game::determine_capturing(const board_info& info, bitboard set_bit)
+{
+	bitboard not_set_bit = ~set_bit;
+	std::optional<piece_type> ptype;
+	if ((info.enemy_pawns & not_set_bit) != info.enemy_pawns) ptype = piece_type::pawn;
+	else if ((info.enemy_bishops & not_set_bit) != info.enemy_bishops) ptype = piece_type::bishop;
+	else if ((info.enemy_knights & not_set_bit) != info.enemy_knights) ptype = piece_type::knight;
+	else if ((info.enemy_rooks & not_set_bit) != info.enemy_rooks) ptype = piece_type::rook;
+	else if ((info.enemy_queens & not_set_bit) != info.enemy_queens) ptype = piece_type::queen;
+	return ptype;
+}
+
 void game::push_promo_moves(std::vector<move>& out, move& m)
 {
 	m.set_promo_piece_type(piece_type::knight);
