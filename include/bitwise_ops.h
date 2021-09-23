@@ -120,10 +120,10 @@ namespace ops
 		return std::make_pair(x, y);
 	}
 
-	inline uint get_bit_from_sq(bitboard b, square sq)
+	inline bool is_square_set(bitboard b, square sq)
 	{
 		uint idx = sq_to_int(sq);
-		return (b >> idx) & 1;
+		return static_cast<bool>((b >> idx) & 1);
 	}
 
 	constexpr inline bitboard set_square_bit(square sq)
@@ -152,6 +152,14 @@ namespace ops
 		return idx;
 	}
 
+	inline uint num_trailing_zeros_with_zero_check(bitboard b)
+	{
+		unsigned long idx;
+		auto zero_check=_BitScanForward64(&idx, b);
+		if (zero_check == 0) return 64;
+		else return idx;
+	}
+
 	inline uint flip_idx(uint idx)
 	{
 		return 63 - idx;
@@ -171,18 +179,18 @@ namespace ops
 	{
 		bitboard left;
 		left = occ & attack_mask;
-		return ((left - 2*slider) ^ _byteswap_uint64(_byteswap_uint64(left) - 2 * _byteswap_uint64(slider))) & attack_mask;
+		return ((left - 2*slider) ^ _byteswap_uint64(_byteswap_uint64(left) - 2*_byteswap_uint64(slider))) & attack_mask;
 	}
 
+	// http://timcooijmans.blogspot.com/2014/04/hyperbola-quintessence-for-rooks-along.html
 	inline bitboard hyperbola_quintessence_for_ranks(bitboard occ, bitboard attack_mask, bitboard slider)
 	{
-		uint shift_down = slider & 56; // == (slider >> 3) << 3, slider >> 3 gets the rank, << 3 multiplies the rank by 8, the number of bits we have to shift down.
-		bitboard left = (occ & attack_mask) >> shift_down;
-		bitboard right = rev_bits(left);
-		bitboard rev_slider1 = rev_bits(slider);
-		bitboard rev_slider = rev_slider1 * 2;
-		bitboard sub = right - rev_slider;
-		return ((left - 2*slider) ^ rev_bits(sub)) << shift_down; // I don't need to & attack_mask because it is only limited to one byte and so already masked.
+		uint shift_down = ops::num_trailing_zeros(slider) & 56; // == ((slider) >> 3) << 3, slider >> 3 gets the rank, << 3 multiplies the rank by 8, the number of bits we have to shift down.
+		constexpr bitboard first_rank_masked = ops::mask_rank(1);
+		bitboard mapped = (((occ >> shift_down) & first_rank_masked) * 0x0101010101010101) & 0x8040201008040201; // & ops::mask_rank(1) -> See the comment on the page
+		slider = ((slider >> shift_down) * 0x0101010101010101) & 0x8040201008040201;
+		bitboard attacks = hyperbola_quintessence(mapped, attack_mask, slider);
+		return ((attacks *0x0101010101010101 / 0x0100000000000000)) << shift_down;
 	}
 
 	inline void pop_lsb(bitboard& b)

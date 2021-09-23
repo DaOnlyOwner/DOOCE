@@ -74,6 +74,8 @@ board::board() :board(
 board::board(const std::string& start)
 	:boards{}
 {
+	if (start.size() != 64)
+		throw std::exception("Board has more / less than 64 fields");
 	std::map<char, bitboard*> charBitboardMap =
 	{
 		{'N',&get_board(piece_type::knight,color::white)},
@@ -163,11 +165,9 @@ void board::init_hq_masks()
 			mask.diagEx = diag.to_ullong();
 			mask.antidiagEx = antidiag.to_ullong();
 			mask.fileEx = file.to_ullong();
-			mask.rankEx = rank.to_ullong();
 			bitboard_constr mask_constr(0);
 			mask_constr.set(idx, true);
-			bitboard m = mask_constr.to_ullong();
-			mask.mask = m;
+			mask.mask = mask_constr.to_ullong();
 			hq_masks[idx] = mask;
 		}
 	}
@@ -175,29 +175,36 @@ void board::init_hq_masks()
 
 void board::init_king_attacks()
 {
-	for (uint x = 0; x < 8; x++)
+	for (int x = 0; x < 8; x++)
 	{
-		for (uint y = 0; y < 8; y++)
+		for (int y = 0; y < 8; y++)
 		{
 			bitboard_constr bc(0);
 			uint idx = ops::to_idx(x, y);
 
-			for (uint j = 0; j < 3; j++)
+			for (int j = -1; j <= 1; j++)
 			{
-				for (uint k = 0; k < 3; k++)
+				for (int k = -1; k <= 1; k++)
 				{
-					uint x_off = x + j;
-					uint y_off = y + k;
-					uint idx = ops::to_idx(x_off, y_off);
-					if (ops::contains(x_off, y_off))
-						bc.set(idx, true);
+					int x_off = x + j;
+					int y_off = y + k;
+					if (ops::contains(x_off, y_off) && !(x_off == x && y_off == y))
+					{
+						uint idx_inner = ops::to_idx((uint)x_off, (uint)y_off);
+						bc.set(idx_inner, true);
+					}
 				}
-				bc.set(idx, false);
-				king_attacks[idx] = bc.to_ullong();
 			}
-
+			king_attacks[idx] = bc.to_ullong();
 		}
 	}
+}
+
+void board::init_all()
+{
+	init_king_attacks();
+	init_hq_masks();
+	init_knight_attacks();
 }
 
 

@@ -34,9 +34,9 @@ struct board
 	board();
 	board(const std::string& start);
 
-
 	static void print_bitboard(bitboard b);
 
+	static void init_all();
 	static void init_knight_attacks();
 	static void init_hq_masks();
 	static void init_king_attacks();
@@ -102,33 +102,35 @@ struct board
 	}
 	static inline bitboard gen_attacks_rook(bitboard occ, uint natural_idx)
 	{
+		constexpr bitboard whole_diag_ex = 9241421688590303745ULL; // Diagonal Ex 
+
 		auto& hq_mask = hq_masks[natural_idx];
 
 		bitboard file_attacks = ops::hyperbola_quintessence(occ, hq_mask.fileEx, hq_mask.mask);
-		//board::print_bitboard(file_attacks);
-		bitboard rank_attacks = ops::hyperbola_quintessence_for_ranks(occ, hq_mask.rankEx, hq_mask.mask);
-		print_bitboard(rank_attacks);
+		bitboard rank_attacks = ops::hyperbola_quintessence_for_ranks(occ, whole_diag_ex, hq_mask.mask);
+		//printf("Rook:\n");
+		//print_bitboard(occ);
+		//print_bitboard(file_attacks);
+		//print_bitboard(rank_attacks);
+		//printf("Okay\n");
 		return (file_attacks | rank_attacks);
 	}
 	static inline bitboard gen_attacks_queen(bitboard occ, uint nat_idx)
 	{
+		constexpr bitboard whole_diag_ex = 9241421688590303745ULL; // Diagonal Ex 
 		auto& hq_mask = hq_masks[nat_idx];
-		bitboard attacks = ops::hyperbola_quintessence(occ, hq_mask.diagEx, hq_mask.mask);
-		attacks |= ops::hyperbola_quintessence(occ, hq_mask.antidiagEx, hq_mask.mask);
-		attacks |= ops::hyperbola_quintessence(occ, hq_mask.fileEx, hq_mask.mask);
-		attacks |= ops::hyperbola_quintessence_for_ranks(occ, hq_mask.rankEx, hq_mask.mask);
-		return attacks;
+		return gen_attacks_bishop(occ, nat_idx) | gen_attacks_rook(occ, nat_idx);
 	}
 
-	static inline uint is_square_attacked(bitboard attacks, square sq)
+	static inline bool is_square_attacked(bitboard attacks, square sq)
 	{
-		return attacks & (~ops::set_square_bit(sq));
+		return static_cast<bool>(attacks & ops::set_square_bit(sq));
 	}
 
 	static inline bool is_king_in_check(bitboard king, bitboard attacks)
 	{
 		square king_square = idx_to_sq(ops::num_trailing_zeros(king));
-		return static_cast<bool>(is_square_attacked(attacks, king_square));
+		return is_square_attacked(attacks, king_square);
 	}
 
 	// TODO: Here add the king square to is_square_attacked.
@@ -136,17 +138,18 @@ struct board
 	static inline bool can_castle_kingside(bitboard occ, bitboard attacks)
 	{
 		if constexpr (VColor == color::white)
-			return ~ops::get_bit_from_sq(occ, square::f1) &
-			~ops::get_bit_from_sq(occ, square::g1) &
-			~is_square_attacked(attacks, square::f1) &
-			~is_square_attacked(attacks, square::g1) &
-			~is_square_attacked(attacks, square::e1);
+			return !ops::is_square_set(occ, square::f1) &&
+				!ops::is_square_set(occ, square::g1) &&
+				!is_square_attacked(attacks, square::f1) &&
+				!is_square_attacked(attacks, square::g1) &&
+				!is_square_attacked(attacks, square::e1);
+		
 		else
-			return ~ops::get_bit_from_sq(occ, square::f8) &
-			~ops::get_bit_from_sq(occ, square::g8) &
-			~is_square_attacked(attacks, square::f8) &
-			~is_square_attacked(attacks, square::g8) &
-			~is_square_attacked(attacks, square::e8);
+			return !ops::is_square_set(occ, square::f8) &&
+			!ops::is_square_set(occ, square::g8) &&
+			!is_square_attacked(attacks, square::f8) &&
+			!is_square_attacked(attacks, square::g8) &&
+			!is_square_attacked(attacks, square::e8);
 
 	}
 
@@ -154,21 +157,21 @@ struct board
 	static inline bool can_castle_queenside(bitboard occ, bitboard attacks)
 	{
 		if constexpr (VColor == color::white)
-			return ~ops::get_bit_from_sq(occ, square::d1) &
-			~ops::get_bit_from_sq(occ, square::c1) &
-			~ops::get_bit_from_sq(occ, square::b1) &
-			~is_square_attacked(attacks, square::b1) &
-			~is_square_attacked(attacks, square::c1) &
-			~is_square_attacked(attacks, square::d1) &
-			~is_square_attacked(attacks, square::e1);
+			return !ops::is_square_set(occ, square::d1) &&
+			!ops::is_square_set(occ, square::c1) &&
+			!ops::is_square_set(occ, square::b1) &&
+			!is_square_attacked(attacks, square::b1) &&
+			!is_square_attacked(attacks, square::c1) &&
+			!is_square_attacked(attacks, square::d1) &&
+			!is_square_attacked(attacks, square::e1);
 		else
-			return ~ops::get_bit_from_sq(occ, square::d8) &
-			~ops::get_bit_from_sq(occ, square::c8) &
-			~ops::get_bit_from_sq(occ, square::b8) &
-			~is_square_attacked(attacks, square::b8) &
-			~is_square_attacked(attacks, square::c8) &
-			~is_square_attacked(attacks, square::d8) &
-			~is_square_attacked(attacks, square::e8);
+			return !ops::is_square_set(occ, square::d8) &&
+			!ops::is_square_set(occ, square::c8) &&
+			!ops::is_square_set(occ, square::b8) &&
+			!is_square_attacked(attacks, square::b8) &&
+			!is_square_attacked(attacks, square::c8) &&
+			!is_square_attacked(attacks, square::d8) &&
+			!is_square_attacked(attacks, square::e8);
 
 	}
 
@@ -364,7 +367,6 @@ struct board
 		bitboard diagEx;
 		bitboard antidiagEx;
 		bitboard fileEx;
-		bitboard rankEx;
 		typedef std::array<hq_mask, 64> lt;
 	};
 	typedef std::array<bitboard, 64> move_lt;

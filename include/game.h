@@ -13,26 +13,27 @@ struct game_info
 };
 
 
-/*
+
 struct perft_results
 {
-	uint64_t nodes = 1ULL;
-	uint64_t captures = 1ULL;
-	uint64_t en_passants = 1ULL;
-	uint64_t castles = 1ULL;
-	uint64_t promos = 1ULL;
-	uint64_t checkmates = 1ULL;
-};*/
+	uint64_t nodes = 0ULL;
+	uint64_t captures = 0ULL;
+	uint64_t en_passants = 0ULL;
+	uint64_t castles = 0ULL;
+	uint64_t promos = 0ULL;
+};
 
 class game
 {
 public:
 
-	game() :b(), start_info_white({ false,false,false }), start_info_black({ false,false,false }), start_color(color::white), start_en_passantable_pawn(0) {}
-	game(const std::string& start_board, const game_info& start_info_white, const game_info& start_info_black, color start_color, bitboard start_en_passantable_pawn)
-		: b(start_board), start_info_white(start_info_white),start_info_black(start_info_black),start_color(start_color), start_en_passantable_pawn(start_en_passantable_pawn){}
+	game(); 
+	game(const std::string& start_board, const game_info& start_info_white, const game_info& start_info_black, color start_color, bitboard start_en_passantable_pawn);
+	game(const std::string& start_board);
 
-	uint64_t perft(int depth);
+
+
+	perft_results perft(int depth);
 
 	// This method is basically only used for castling.
 	template<color VColor>
@@ -73,7 +74,7 @@ public:
 	static std::vector<move> gen_all_moves(const attack_pattern& pattern, int size, const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo)
 	{
 		std::vector<move> out;
-		out.reserve(650);
+		out.reserve(250);
 		
 		// Attack pattern from previous is_king_in_check test
 		for (int i = 0; i<size; i++)
@@ -99,13 +100,40 @@ private:
 	color start_color;
 	bitboard start_en_passantable_pawn;
 	
+	void update_perft_results(const perft_results& res, perft_results& to_update);
+
 	template<color VColor>
-	uint64_t perft_inner(int depth, game_info& ginfo_own, game_info& ginfo_enemy, bitboard en_passantable_pawn, const attack_pattern& pattern, int size, const board_info& binfo)
+	perft_results perft_inner(int depth, game_info& ginfo_own, game_info& ginfo_enemy, bitboard en_passantable_pawn, const attack_pattern& pattern, int size, const board_info& binfo, const move& m)
 	{
 		constexpr color ecolor = invert_color(VColor);
-		if (depth == 0) return 1ULL;
-		uint64_t res = 0ULL;
-		board::print_bitboard(pattern[0].attacks);
+		if (depth == 0)
+		{
+			perft_results res{};
+			res.nodes = 1ULL;
+			switch (m.get_move_type())
+			{
+			case move_type::captures:
+				res.captures = 1ULL;
+				break;
+			case move_type::en_passant:
+				res.en_passants = 1ULL;
+				break;
+			case move_type::king_castle:
+				res.castles = 1ULL;
+				break;
+			case move_type::promo:
+				res.promos = 1ULL;
+				break;
+			case move_type::promo_captures:
+				res.promos = 1ULL;
+				res.captures = 1ULL;
+				break;
+			default:
+				break;
+			}
+			return res;
+		};
+		perft_results res_overall{};
 		std::vector<move> moves = game::gen_all_moves<VColor>(pattern, size, binfo, en_passantable_pawn, ginfo_own);
 		for (const move& m : moves)
 		{
@@ -119,12 +147,15 @@ private:
 			bitboard king = b.get_board(piece_type::king, VColor); // Test if our king is in check, and if not the move was legal.
 			if (!board::is_king_in_check(king,attacks))
 			{
-				res += perft_inner<ecolor>(depth - 1, ginfo_enemy, ginfo_own_after, en_passantable_pawn_after, pattern_after, size_after, binfo_after);
+				auto res = perft_inner<ecolor>(depth - 1, ginfo_enemy, ginfo_own_after, en_passantable_pawn_after, pattern_after, size_after, binfo_after, m);
+				update_perft_results(res, res_overall);
 			}
 			b.undo_move<VColor>(m);
 		}
-		return res;
+		return res_overall;
 	}
+
+
 
 	template<color VColor>
 	static std::pair<game_info, bitboard> game_info_from_move(const move& m, const game_info& previous_info)
@@ -179,13 +210,18 @@ private:
 			bitboard set_bit = ops::set_nth_bit(idx);
 			move m{};
 			m.set_from(idx);
-			uint to = ops::num_trailing_zeros(board::gen_move_pawns_single<VColor>(set_bit, info.not_own_color_occ));
+			uint to = ops::num_trailing_zeros_with_zero_check(board::gen_move_pawns_single<VColor>(set_bit, info.not_own_color_occ));
+			if (to == 64)
+			{
+				ops::pop_lsb(cpy);
+				continue;
+			}
 			m.set_to(to);
 			m.set_moved_piece_type(piece_type::pawn);
 			m.set_move_type(move_type::pawn_single);
 			out.push_back(m);
-			to = ops::num_trailing_zeros(board::gen_move_pawns_dbl<VColor>(set_bit, info.not_own_color_occ));
-			if (to == 0ULL)
+			to = ops::num_trailing_zeros_with_zero_check(board::gen_move_pawns_dbl<VColor>(set_bit, info.not_own_color_occ));
+			if (to == 64)
 			{
 				ops::pop_lsb(cpy);
 				continue;
