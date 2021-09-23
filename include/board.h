@@ -26,6 +26,7 @@ struct board_info
 	bitboard enemy_color_occ;
 	bitboard not_own_color_occ;
 	bitboard occ;
+	bitboard not_occ;
 };
 
 struct board
@@ -108,16 +109,10 @@ struct board
 
 		bitboard file_attacks = ops::hyperbola_quintessence(occ, hq_mask.fileEx, hq_mask.mask);
 		bitboard rank_attacks = ops::hyperbola_quintessence_for_ranks(occ, whole_diag_ex, hq_mask.mask);
-		//printf("Rook:\n");
-		//print_bitboard(occ);
-		//print_bitboard(file_attacks);
-		//print_bitboard(rank_attacks);
-		//printf("Okay\n");
 		return (file_attacks | rank_attacks);
 	}
 	static inline bitboard gen_attacks_queen(bitboard occ, uint nat_idx)
 	{
-		constexpr bitboard whole_diag_ex = 9241421688590303745ULL; // Diagonal Ex 
 		auto& hq_mask = hq_masks[nat_idx];
 		return gen_attacks_bishop(occ, nat_idx) | gen_attacks_rook(occ, nat_idx);
 	}

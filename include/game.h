@@ -210,22 +210,24 @@ private:
 			bitboard set_bit = ops::set_nth_bit(idx);
 			move m{};
 			m.set_from(idx);
-			uint to = ops::num_trailing_zeros_with_zero_check(board::gen_move_pawns_single<VColor>(set_bit, info.not_own_color_occ));
-			if (to == 64)
+			bitboard single = board::gen_move_pawns_single<VColor>(set_bit, info.not_occ);
+			if (single == 0ULL)
 			{
 				ops::pop_lsb(cpy);
 				continue;
 			}
+			uint to = ops::num_trailing_zeros(single);
 			m.set_to(to);
 			m.set_moved_piece_type(piece_type::pawn);
 			m.set_move_type(move_type::pawn_single);
 			out.push_back(m);
-			to = ops::num_trailing_zeros_with_zero_check(board::gen_move_pawns_dbl<VColor>(set_bit, info.not_own_color_occ));
-			if (to == 64)
+			bitboard dbl = board::gen_move_pawns_dbl<VColor>(set_bit, info.not_occ);
+			if (dbl == 0ULL)
 			{
 				ops::pop_lsb(cpy);
 				continue;
 			}
+			to = ops::num_trailing_zeros(dbl);
 			m.set_to(to);
 			m.set_move_type(move_type::pawn_double);
 			out.push_back(m);
@@ -429,6 +431,7 @@ private:
 		info.enemy_color_occ = info.enemy_bishops | info.enemy_king | info.enemy_knights | info.enemy_queens | info.enemy_rooks | info.enemy_pawns;
 		info.not_own_color_occ = ~info.own_color_occ;
 		info.occ = info.own_color_occ | info.enemy_color_occ;
+		info.not_occ = ~info.occ;
 	}
 };
 

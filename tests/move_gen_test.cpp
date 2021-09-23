@@ -47,7 +47,7 @@ TEST_CASE("Move generation pawn")
 		game g(
 			"..k....."
 			"........"
-			"..p....."
+			"p.p....."
 			".P......"
 			"........"
 			"........"
@@ -55,9 +55,27 @@ TEST_CASE("Move generation pawn")
 			"K.......", ginfo, ginfo, color::white, 0ULL
 		);
 		auto res = g.perft(1);
+		REQUIRE(res.captures == 2);
+		REQUIRE(res.nodes == 6);
+	}
+
+	SECTION("Pawn double move")
+	{
+		game g(
+			"k......."
+			"........"
+			"........"
+			"........"
+			"..p....."
+			"p......."
+			"PPP....."
+			"K.......", ginfo, ginfo, color::white, 0ull
+		);
+		auto res = g.perft(1);
 		REQUIRE(res.captures == 1);
 		REQUIRE(res.nodes == 5);
 	}
+
 }
 
 TEST_CASE("Move generation rook")
@@ -91,6 +109,21 @@ TEST_CASE("Move generation rook")
 	res = g2.perft(1);
 	REQUIRE(res.captures == 0);
 	REQUIRE(res.nodes == 17);
+
+	game g3(
+		"....k..K"
+		"........"
+		"........"
+		"...p...."
+		".p.R..p."
+		"........"
+		"...p...."
+		"........", ginfo, ginfo, color::white, 0ULL
+	);
+
+	res = g3.perft(1);
+	REQUIRE(res.captures == 4);
+	REQUIRE(res.nodes == 11);
 }
 
 

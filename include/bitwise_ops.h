@@ -152,14 +152,6 @@ namespace ops
 		return idx;
 	}
 
-	inline uint num_trailing_zeros_with_zero_check(bitboard b)
-	{
-		unsigned long idx;
-		auto zero_check=_BitScanForward64(&idx, b);
-		if (zero_check == 0) return 64;
-		else return idx;
-	}
-
 	inline uint flip_idx(uint idx)
 	{
 		return 63 - idx;
