@@ -3,7 +3,6 @@
 #include "catch.hpp"
 #include "game.h"
 
-
 game_info ginfo{ true,true,true };
 
 TEST_CASE("INIT")
@@ -125,6 +124,25 @@ TEST_CASE("Move generation rook")
 	REQUIRE(res.captures == 4);
 	REQUIRE(res.nodes == 11);
 }
+
+TEST_CASE("Move Generation Bishop")
+{
+	game g(
+		". . . . . . . ."
+		". . . k . . . ."
+		". . . B . . . ."
+		". . p . . . . ."
+		". . . . . . . ."
+		". . . . . . p ."
+		". . . . . . . ."
+		"K . . . . . . .", ginfo, ginfo, color::white, 0ULL
+	);
+	auto res = g.perft(1);
+	REQUIRE(res.captures == 2);
+	REQUIRE(res.nodes == 8);
+}
+
+
 
 
 TEST_CASE("Move Generation Perft", "[move_gen]")

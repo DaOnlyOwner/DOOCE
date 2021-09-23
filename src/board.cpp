@@ -74,7 +74,11 @@ board::board() :board(
 board::board(const std::string& start)
 	:boards{}
 {
-	if (start.size() != 64)
+	auto cpy_start = start;
+	// Remove spaces from string: https://stackoverflow.com/questions/18589525/removing-all-spaces-from-a-string?noredirect=1&lq=1
+	cpy_start.erase(std::remove_if(cpy_start.begin(), cpy_start.end(), static_cast<int(*)(int)>(isspace)),cpy_start.end());
+
+	if (cpy_start.size() != 64)
 		throw std::exception("Board has more / less than 64 fields");
 	std::map<char, bitboard*> charBitboardMap =
 	{
@@ -92,10 +96,10 @@ board::board(const std::string& start)
 		{'r',&get_board(piece_type::rook,color::black)},
 		{'p',&get_board(piece_type::pawn,color::black)}
 	};
-	for (int i = 0; i<start.size(); i++)
+	for (int i = 0; i<cpy_start.size(); i++)
 	{
-		char c = start[i];
-		if (c == '.') continue;
+		char c = cpy_start[i];
+		if (c == '.' || c==' ') continue;
 		bitboard* b = charBitboardMap[c];
 		*b |= ops::set_nth_bit(ops::flip_idx(i));
 	}
