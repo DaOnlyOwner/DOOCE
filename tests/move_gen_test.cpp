@@ -53,8 +53,6 @@ TEST_CASE("Move Generation Perft Position 2")
 		REQUIRE(res.castles == 128013);
 		REQUIRE(res.promos == 15172);
 	}
-
-
 }
 
 TEST_CASE("Move generation king")

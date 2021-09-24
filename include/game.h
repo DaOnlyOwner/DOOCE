@@ -229,23 +229,6 @@ private:
 		bool can_castle_queenside = board::can_castle_queenside<VColor>(info.occ, attacks) && !ginfo.has_moved_king && !ginfo.has_moved_queenside_rook;
 		move_type mtype;
 		piece_type moved = (piece_type::king);
-		if (!can_castle_kingside)
-		{
-			printf("Cannot castle kingside: \n");
-			b.print();
-			board::print_bitboard(info.occ);
-			board::print_bitboard(attacks);
-			printf("\n");
-		}
-
-		if (!can_castle_queenside)
-		{
-			printf("Cannot castle queenside: \n");
-			b.print();
-			board::print_bitboard(info.occ);
-			board::print_bitboard(attacks);
-			printf("\n");
-		}
 
 		if (can_castle_kingside)
 		{

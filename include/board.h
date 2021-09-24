@@ -163,7 +163,6 @@ struct board
 			return !ops::is_square_set(occ, square::d1) &&
 			!ops::is_square_set(occ, square::c1) &&
 			!ops::is_square_set(occ, square::b1) &&
-			!is_square_attacked(attacks, square::b1) &&
 			!is_square_attacked(attacks, square::c1) &&
 			!is_square_attacked(attacks, square::d1) &&
 			!is_square_attacked(attacks, square::e1);
@@ -171,7 +170,6 @@ struct board
 			return !ops::is_square_set(occ, square::d8) &&
 			!ops::is_square_set(occ, square::c8) &&
 			!ops::is_square_set(occ, square::b8) &&
-			!is_square_attacked(attacks, square::b8) &&
 			!is_square_attacked(attacks, square::c8) &&
 			!is_square_attacked(attacks, square::d8) &&
 			!is_square_attacked(attacks, square::e8);
