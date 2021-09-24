@@ -1,5 +1,6 @@
 #include "game.h"
 #include "bitwise_ops.h"
+#include "misc_tools.h"
 
 game::game()
 	: b(), start_info_white({ false,false,false }), start_info_black({ false,false,false }), start_color(color::white), start_en_passantable_pawn(0) {}
@@ -7,8 +8,44 @@ game::game()
 game::game(const std::string& start_board, const game_info& start_info_white, const game_info& start_info_black, color start_color, bitboard start_en_passantable_pawn)
 	: b(start_board), start_info_white(start_info_white), start_info_black(start_info_black), start_color(start_color), start_en_passantable_pawn(start_en_passantable_pawn) {}
 
-game::game(const std::string& start_board) 
-	: b(start_board), start_info_white({ false,false,false }), start_info_black({ false,false,false }), start_color(color::white), start_en_passantable_pawn(0) {}
+game::game(const std::string& start_board)
+{
+	start_en_passantable_pawn = 0ull;
+	auto splitted = misc_tools::split(start_board, ' ');
+	b = board(splitted[0], true);
+	start_color = (splitted[1] == "w" ? color::white : color::black);
+
+	game_info white{ true,true,true }, black{ true,true,true };
+	for (char c : splitted[2])
+	{
+		if (c == 'Q')
+		{
+			white.has_moved_king = false;
+			white.has_moved_queenside_rook = false;
+		}
+		else if (c == 'q')
+		{
+			black.has_moved_king = false;
+			black.has_moved_queenside_rook = false;
+		}
+		else if (c == 'K')
+		{
+			white.has_moved_king = false;
+			white.has_moved_kingside_rook = false;
+		}
+		else if (c == 'k')
+		{
+			black.has_moved_king = false;
+			black.has_moved_kingside_rook = false;
+		}
+	}
+	start_info_black = black;
+	start_info_white = white;
+	// Skipt en passants for now
+	// TODO: En passants
+	// Skip clocks
+
+}
 
 perft_results game::perft(int depth)
 {

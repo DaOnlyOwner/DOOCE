@@ -29,17 +29,15 @@ public:
 
 	game(); 
 	game(const std::string& start_board, const game_info& start_info_white, const game_info& start_info_black, color start_color, bitboard start_en_passantable_pawn);
-	game(const std::string& start_board);
+	game(const std::string& fen);
 
 
 
 	perft_results perft(int depth);
 
-	bool is_king_in_check()
-
 	// This method is basically only used for castling.
 	template<color VColor>
-	static bitboard gen_all_attacks_except_en_passant(/*bitboard en_passantable_pawn,*/ const board_info& info)
+	static bitboard gen_all_own_attacks_except_en_passant(/*bitboard en_passantable_pawn,*/ const board_info& info)
 	{
 		bitboard attacks =
 			gen_all_attacks_from_sliding_piece_type(info.own_bishops, info.occ, &board::gen_attacks_bishop) |
@@ -56,11 +54,45 @@ public:
 		return attacks & info.not_own_color_occ;
 	}
 
+	template<color VColor>
+	static bitboard gen_all_enemy_attacks_except_en_passant(/*bitboard en_passantable_pawn,*/ const board_info& info)
+	{
+		bitboard attacks =
+			gen_all_attacks_from_sliding_piece_type(info.enemy_bishops, info.occ, &board::gen_attacks_bishop) |
+			gen_all_attacks_from_sliding_piece_type(info.enemy_rooks, info.occ, &board::gen_attacks_rook) |
+			gen_all_attacks_from_sliding_piece_type(info.enemy_queens, info.occ, &board::gen_attacks_queen) |
+			gen_all_attacks_from_piece_type(info.enemy_knights, info.occ, &board::gen_attacks_knight) |
+			gen_all_attacks_from_piece_type(info.enemy_king, info.occ, &board::gen_attacks_king);
+
+		attacks |= board::gen_attack_pawns_left<VColor>(info.enemy_pawns, info.own_color_occ);
+		attacks |= board::gen_attack_pawns_right<VColor>(info.enemy_pawns, info.own_color_occ);
+		// The following is probably not needed because this method is used only for castling and en_passant attacks cannot put the king in check or attack the squares the king needs for castling.
+		//attacks |= board::gen_en_passant_left<VColor>(info.own_pawns, en_passantable_pawn);
+		//attacks |= board::gen_en_passant_right<VColor>(info.own_pawns, en_passantable_pawn);
+		return attacks & (~info.enemy_color_occ);
+	}
+
+
+
 	// This method is used to precalc the attack patterns to test if the enemy king is in check
 	template<color VColor>
 	static bitboard gen_all_attack_pattern_except_en_passant(attack_pattern& pattern, int& size, const board_info& info)
 	{
 		size = 0;
+
+		/*bitboard battacks = gen_attack_info_from_sliding_piece_type(info.own_bishops, info, pattern, size, piece_type::bishop, &board::gen_attacks_bishop);
+		bitboard rattacks = gen_attack_info_from_sliding_piece_type(info.own_rooks, info, pattern, size, piece_type::rook, &board::gen_attacks_rook);
+		bitboard qattacks = gen_attack_info_from_sliding_piece_type(info.own_queens, info, pattern, size, piece_type::queen, &board::gen_attacks_queen);
+		bitboard nattacks = gen_attack_info_from_piece_type(info.own_knights, info, pattern, size, piece_type::knight, &board::gen_attacks_knight);
+		bitboard kattacks = gen_attack_info_from_piece_type(info.own_king, info, pattern, size, piece_type::king, &board::gen_attacks_king);
+		bitboard pattacks = gen_attack_info_from_pawns<VColor>(info, pattern, size);
+		board::print_bitboard(battacks);
+		board::print_bitboard(rattacks);
+		board::print_bitboard(qattacks);
+		board::print_bitboard(nattacks);
+		board::print_bitboard(kattacks);
+		board::print_bitboard(pattacks);*/
+
 		bitboard attacks =
 			gen_attack_info_from_sliding_piece_type(info.own_bishops, info, pattern, size, piece_type::bishop, &board::gen_attacks_bishop) |
 			gen_attack_info_from_sliding_piece_type(info.own_rooks, info, pattern, size, piece_type::rook, &board::gen_attacks_rook) |
@@ -73,7 +105,7 @@ public:
 
 
 	template<color VColor>
-	static std::vector<move> gen_all_moves(const attack_pattern& pattern, int size, const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo)
+	static std::vector<move> gen_all_moves(const attack_pattern& pattern, int size, const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo, const board& b)
 	{
 		//board::print_bitboard(pattern[0].attacks);
 		std::vector<move> out;
@@ -93,7 +125,7 @@ public:
 		game::gen_move_pawn_push<VColor>(info, out);
 
 		// castling
-		game::gen_move_castling<VColor>(info, ginfo, out);
+		game::gen_move_castling<VColor>(info, ginfo, out,b);
 		return out;
 	}
 private:
@@ -120,9 +152,13 @@ private:
 				break;
 			case move_type::en_passant:
 				res.en_passants = 1ULL;
+				res.captures = 1ULL;
 				break;
 			case move_type::king_castle:
 				res.castles = 1ULL;
+				break;
+			case move_type::queen_castle:
+				res.castles = 1ULL; 
 				break;
 			case move_type::promo:
 				res.promos = 1ULL;
@@ -131,13 +167,15 @@ private:
 				res.promos = 1ULL;
 				res.captures = 1ULL;
 				break;
+			case move_type::quiet:
+				break;
 			default:
 				break;
 			}
 			return res;
 		};
 		perft_results res_overall{};
-		std::vector<move> moves = game::gen_all_moves<VColor>(pattern, size, binfo, en_passantable_pawn, ginfo_own);
+		std::vector<move> moves = game::gen_all_moves<VColor>(pattern, size, binfo, en_passantable_pawn, ginfo_own,b);
 		for (const move& m : moves)
 		{
 			b.do_move<VColor>(m);
@@ -183,14 +221,32 @@ private:
 	static void push_promo_moves(std::vector<move>& out, move& m);
 
 	template<color VColor>
-	static void gen_move_castling(const board_info& info, const game_info& ginfo, std::vector<move>& out)
+	static void gen_move_castling(const board_info& info, const game_info& ginfo, std::vector<move>& out,const board& b)
 	{
 		constexpr color ecolor = invert_color(VColor);
-		bitboard attacks = game::gen_all_attacks_except_en_passant<ecolor>(info);
+		bitboard attacks = game::gen_all_enemy_attacks_except_en_passant<ecolor>(info);
 		bool can_castle_kingside = board::can_castle_kingside<VColor>(info.occ, attacks) && !ginfo.has_moved_king && !ginfo.has_moved_kingside_rook;
 		bool can_castle_queenside = board::can_castle_queenside<VColor>(info.occ, attacks) && !ginfo.has_moved_king && !ginfo.has_moved_queenside_rook;
 		move_type mtype;
 		piece_type moved = (piece_type::king);
+		if (!can_castle_kingside)
+		{
+			printf("Cannot castle kingside: \n");
+			b.print();
+			board::print_bitboard(info.occ);
+			board::print_bitboard(attacks);
+			printf("\n");
+		}
+
+		if (!can_castle_queenside)
+		{
+			printf("Cannot castle queenside: \n");
+			b.print();
+			board::print_bitboard(info.occ);
+			board::print_bitboard(attacks);
+			printf("\n");
+		}
+
 		if (can_castle_kingside)
 		{
 			mtype = (move_type::king_castle);

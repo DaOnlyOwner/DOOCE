@@ -33,7 +33,8 @@ struct board
 {
 
 	board();
-	board(const std::string& start);
+	board(const std::string& start, bool fen=false);
+	void print() const ;
 
 	static void print_bitboard(bitboard b);
 
@@ -121,7 +122,6 @@ struct board
 	}
 	static inline bitboard gen_attacks_queen(bitboard occ, uint nat_idx)
 	{
-		auto& hq_mask = hq_masks[nat_idx];
 		return gen_attacks_bishop(occ, nat_idx) | gen_attacks_rook(occ, nat_idx);
 	}
 
@@ -179,6 +179,11 @@ struct board
 	}
 
 	bitboard& get_board(piece_type ptype, color c)
+	{
+		return boards[static_cast<uint>(ptype)][static_cast<uint>(c)];
+	}
+
+	const bitboard& get_board_const(piece_type ptype, color c) const
 	{
 		return boards[static_cast<uint>(ptype)][static_cast<uint>(c)];
 	}
