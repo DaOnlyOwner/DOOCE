@@ -268,7 +268,7 @@ struct board
 			constexpr auto rook_from_square = VColor == color::white ? square::a1 : square::a8;
 			constexpr auto rook_to_square = VColor == color::white ? square::d1 : square::d8;
 			constexpr auto king_from_square = VColor == color::white ? square::e1 : square::e8;
-			constexpr auto king_to_square = VColor == color::white ? square::g1 : square::g8;
+			constexpr auto king_to_square = VColor == color::white ? square::c1 : square::c8;
 			constexpr bitboard rook_from = ops::set_square_bit(rook_from_square);
 			constexpr bitboard rook_to = ops::set_square_bit(rook_to_square);
 			constexpr bitboard king_from = ops::set_square_bit(king_from_square);
@@ -355,7 +355,7 @@ struct board
 			constexpr auto rook_from_square = VColor == color::white ? square::a1 : square::a8;
 			constexpr auto rook_to_square = VColor == color::white ? square::d1 : square::d8;
 			constexpr auto king_from_square = VColor == color::white ? square::e1 : square::e8;
-			constexpr auto king_to_square = VColor == color::white ? square::g1 : square::g8;
+			constexpr auto king_to_square = VColor == color::white ? square::c1 : square::c8;
 			constexpr bitboard rook_from = ops::set_square_bit(rook_from_square);
 			constexpr bitboard rook_to = ops::set_square_bit(rook_to_square);
 			constexpr bitboard king_from = ops::set_square_bit(king_from_square);
