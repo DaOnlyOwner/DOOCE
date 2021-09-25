@@ -3,19 +3,24 @@
 #include "misc_tools.h"
 
 game::game()
-	: b(), start_info_white({ false,false,false }), start_info_black({ false,false,false }), start_color(color::white), start_en_passantable_pawn(0) {}
+	: b(), start_info_white({ false,false,false }), start_info_black({ false,false,false }),
+	    start_color(color::white), start_en_passantable_pawn(0) {}
 
-game::game(const std::string& start_board, const game_info& start_info_white, const game_info& start_info_black, color start_color, bitboard start_en_passantable_pawn)
-	: b(start_board), start_info_white(start_info_white), start_info_black(start_info_black), start_color(start_color), start_en_passantable_pawn(start_en_passantable_pawn) {}
+game::game(const std::string& start_board, const game_info& start_info_white,
+    const game_info& start_info_black, color start_color, bitboard start_en_passantable_pawn)
+	: b(start_board), start_info_white(start_info_white), start_info_black(start_info_black),
+	    start_color(start_color), start_en_passantable_pawn(start_en_passantable_pawn) {}
 
-game::game(const std::string& start_board)
+game::game(const std::string& fen_str)
 {
+	// TODO: add missing FEN features (en-passant, moves since last pawn move, game round)
+
 	start_en_passantable_pawn = 0ull;
-	auto splitted = misc_tools::split(start_board, ' ');
+	auto splitted = misc_tools::split(fen_str, ' ');
 	b = board(splitted[0], true);
 	start_color = (splitted[1] == "w" ? color::white : color::black);
 
-	game_info white{ true,true,true }, black{ true,true,true };
+	game_info white{ true, true, true }, black{ true, true, true };
 	for (char c : splitted[2])
 	{
 		if (c == 'Q')
@@ -41,29 +46,31 @@ game::game(const std::string& start_board)
 	}
 	start_info_black = black;
 	start_info_white = white;
-	// Skipt en passants for now
-	// TODO: En passants
-	// Skip clocks
-
 }
 
 perft_results game::perft(int depth)
 {
 	board_info binfo;
+	attack_pattern pattern;
+	int size; move m{};
+
 	if (start_color == color::white)
 		game::extract_board<color::white>(binfo);
-	else game::extract_board<color::black>(binfo);
-	attack_pattern pattern;
-	int size;
+	else
+	    game::extract_board<color::black>(binfo);
+
 	if(start_color == color::white)
 		game::gen_all_attack_pattern_except_en_passant<color::white>(pattern, size, binfo);
-	else game::gen_all_attack_pattern_except_en_passant<color::black>(pattern, size, binfo);
-	move m{};
-	if(start_color == color::white)
-		return perft_inner<color::white>(depth, start_info_white, start_info_black, start_en_passantable_pawn, pattern, size, binfo,m);
-	else return perft_inner<color::black>(depth, start_info_black, start_info_white, start_en_passantable_pawn, pattern, size, binfo,m);
-}
+	else
+	    game::gen_all_attack_pattern_except_en_passant<color::black>(pattern, size, binfo);
 
+	if (start_color == color::white)
+		return perft_inner<color::white>(depth, start_info_white, start_info_black,
+		    start_en_passantable_pawn, pattern, size, binfo,m);
+	else
+	    return perft_inner<color::black>(depth, start_info_black, start_info_white,
+	        start_en_passantable_pawn, pattern, size, binfo,m);
+}
 
 std::optional<piece_type> game::determine_capturing(const board_info& info, bitboard set_bit)
 {
@@ -97,4 +104,3 @@ void game::update_perft_results(const perft_results& res, perft_results& to_upda
 	to_update.promos += res.promos;
 	to_update.nodes += res.nodes;
 }
-

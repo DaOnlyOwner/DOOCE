@@ -15,7 +15,9 @@ ADD ./ /app/src
 WORKDIR /app/build
 
 # build the source code
-RUN cmake ../src && cmake --build .
+RUN cmake ../src -DCMAKE_BUILD_TYPE=Release && cmake --build .
 
 # run the unit tests
-RUN ctest
+RUN cd tests && ./move_gen_test
+
+# TODO: package the lib binaries

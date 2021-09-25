@@ -1,9 +1,14 @@
 #pragma once
 #include "definitions.h"
 
+#ifdef __GNUC__
+    #include <byteswap.h>
+#elif _MSC_VER
+    #define bswap_64(x) (_byteswap_uint64((x)))
+#endif
+
 namespace ops
 {
-
 	constexpr bitboard notAFile = 0xfefefefefefefefe;
 	constexpr bitboard notHFile = 0x7f7f7f7f7f7f7f7f;
 	constexpr bitboard mask_rank(int r)
@@ -107,13 +112,20 @@ namespace ops
 		return std::make_pair(x, y);
 	}
 
-	// Basically gets the index of the least significant set bit 
+// Get the index of the least significant set bit.
+#ifdef __GNUC__
+    inline uint num_trailing_zeros(bitboard b)
+	{
+		return __builtin_ctzll(b);
+	}
+#elif _MSC_VER
 	inline uint num_trailing_zeros(bitboard b)
 	{
 		unsigned long idx;
 		_BitScanForward64(&idx, b);
 		return idx;
 	}
+#endif
 
 	inline uint flip_idx(uint idx)
 	{
@@ -129,7 +141,7 @@ namespace ops
 	{
 		bitboard left;
 		left = occ & attack_mask;
-		return ((left - 2*slider) ^ _byteswap_uint64(_byteswap_uint64(left) - 2*_byteswap_uint64(slider))) & attack_mask;
+		return ((left - 2 * slider) ^ bswap_64(bswap_64(left) - 2 * bswap_64(slider))) & attack_mask;
 	}
 
 	// http://timcooijmans.blogspot.com/2014/04/hyperbola-quintessence-for-rooks-along.html
