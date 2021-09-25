@@ -188,6 +188,58 @@ void board::print() const
 	printf("   a b c d e f g h\n\n");
 }
 
+std::string board::print_fen() const
+{
+	std::string board_repr;
+	board_repr.resize(64, '.');
+	color c = color::white;
+	for (int i = 0; i < 6; i++)
+	{
+		piece_type pt = static_cast<piece_type>(i);
+		fill_board(board_repr, get_board_const(pt, c), pt, c);
+	}
+	c = color::black;
+	for (int i = 0; i < 6; i++)
+	{
+		piece_type pt = static_cast<piece_type>(i);
+		fill_board(board_repr, get_board_const(pt, c), pt, c);
+	}
+	std::string fen = "";
+	int counter = 0;
+	for (int y = 0; y < 8; y++)
+	{
+		for (int x = 0; x < 8; x++)
+		{
+			char c = board_repr[y * 8 + x];
+			if (c == '.')
+			{
+				counter++;
+				if (counter == 8)
+				{
+					fen.push_back('8');
+					counter = 0;
+				}
+			}
+			else
+			{
+				if (counter > 0) fen.push_back(counter + '0');
+				counter = 0;
+				fen.push_back(c);
+			}
+		}
+		if (counter > 0)
+		{
+			fen.push_back(counter + '0');
+			counter = 0;
+		}
+		fen.push_back('/');
+	}
+	fen.pop_back();
+	printf("%s\n", fen.c_str());
+	return fen;
+}
+
+
 void board::print_bitboard(bitboard b)
 {
 	bitboard mask = 1ULL << 63ULL;

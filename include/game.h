@@ -21,6 +21,14 @@ struct perft_results
 	uint64_t promos = 0ULL;
 };
 
+//struct game_context
+//{
+//	game_info black;
+//	game_info white;
+//	bitboard en_passantable_pawn;
+//	color start_color;
+//};
+
 class game
 {
 public:
@@ -31,6 +39,61 @@ public:
 	game(const std::string& fen);
 
 	perft_results perft(int depth);
+
+
+	game_info get_start_info(color c) const 
+	{
+		if (c == color::white)
+			return start_info_white;
+		else return start_info_black;
+	}
+
+	color get_start_color() const
+	{
+		return start_color;
+	}
+
+	board& get_board()
+	{
+		return b;
+	}
+
+	const board& get_board_const() const
+	{
+		return b;
+	}
+
+	bitboard get_start_en_passantable_pawn() const 
+	{
+		return start_en_passantable_pawn;
+	}
+
+	template<color VColor>
+	void extract_board(board_info& info)
+	{
+		constexpr color ecolor = invert_color(VColor);
+		info.own_bishops = b.get_board_const(piece_type::bishop, VColor);
+		info.own_king = b.get_board_const(piece_type::king, VColor);
+		info.own_knights = b.get_board_const(piece_type::knight, VColor);
+		info.own_pawns = b.get_board_const(piece_type::pawn, VColor);
+		info.own_queens = b.get_board_const(piece_type::queen, VColor);
+		info.own_rooks = b.get_board_const(piece_type::rook, VColor);
+
+		info.enemy_bishops = b.get_board_const(piece_type::bishop, ecolor);
+		info.enemy_king = b.get_board_const(piece_type::king, ecolor);
+		info.enemy_knights = b.get_board_const(piece_type::knight, ecolor);
+		info.enemy_pawns = b.get_board_const(piece_type::pawn, ecolor);
+		info.enemy_queens = b.get_board_const(piece_type::queen, ecolor);
+		info.enemy_rooks = b.get_board_const(piece_type::rook, ecolor);
+
+		info.own_color_occ = info.own_king | info.own_knights | info.own_bishops
+			| info.own_queens | info.own_rooks | info.own_pawns;
+		info.enemy_color_occ = info.enemy_bishops | info.enemy_king | info.enemy_knights
+			| info.enemy_queens | info.enemy_rooks | info.enemy_pawns;
+		info.not_own_color_occ = ~info.own_color_occ;
+		info.occ = info.own_color_occ | info.enemy_color_occ;
+		info.not_occ = ~info.occ;
+	}
 
 	// This method is basically only used for castling.
 	template<color VColor>
@@ -86,6 +149,34 @@ public:
 		// This is already ANDed by info.not_own_color_occ (in gen_attack_info_from_piece_type),
 		// so I don't need to do that here again.
 		return attacks;
+	}
+
+	template<color VColor>
+	static std::vector<move> gen_all_legal_moves(const attack_pattern& pattern, int size, const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo, board& b)
+	{
+		constexpr color ecolor = invert_color(VColor);
+		auto moves = gen_all_moves<VColor>(pattern, size, info, en_passantable_pawn, ginfo);
+		std::vector<move> moves_legal;
+		moves_legal.reserve(moves.size());
+		for (const move& m : moves)
+		{
+			b.do_move<VColor>(m);
+			bitboard attacks = game::gen_all_enemy_attacks_except_en_passant<ecolor>(info);
+			if (!b.is_king_in_check(VColor, attacks))
+				moves_legal.push_back(m);
+			b.undo_move<VColor>(m);
+		}
+		return moves_legal;
+	}
+
+	template<color VColor>
+	static std::vector<move> gen_all_legal_moves(const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo, board& b)
+	{
+		constexpr color ecolor = invert_color(VColor);
+		attack_pattern ap;
+		int size = 0;
+		gen_all_attack_pattern_except_en_passant<VColor>(ap, size, info);
+		return gen_all_legal_moves<VColor>(ap, size, info, en_passantable_pawn, ginfo, b);
 	}
 
 	template<color VColor>
@@ -178,8 +269,8 @@ private:
 			int size_after;
 			bitboard attacks = game::gen_all_attack_pattern_except_en_passant<ecolor>(
 				pattern_after, size_after, binfo_after);
-			bitboard king = b.get_board(piece_type::king, VColor); // Test if our king is in check, and if not the move was legal.
-			if (!board::is_king_in_check(king,attacks))
+			// Test if king is in check and see if the move is legal
+			if (!b.is_king_in_check(VColor, attacks))
 			{
 				auto res = perft_inner<ecolor>(depth - 1, ginfo_enemy, ginfo_own_after,
 				    en_passantable_pawn_after, pattern_after, size_after, binfo_after, m);
@@ -442,33 +533,6 @@ private:
 			piece_occ &= piece_occ - 1;
 		}
 		return attacks;
-	}
-
-	template<color VColor>
-	void extract_board(board_info& info)
-	{
-		constexpr color ecolor = invert_color(VColor);
-		info.own_bishops = b.get_board(piece_type::bishop, VColor);
-		info.own_king = b.get_board(piece_type::king, VColor);
-		info.own_knights = b.get_board(piece_type::knight, VColor);
-		info.own_pawns = b.get_board(piece_type::pawn, VColor);
-		info.own_queens = b.get_board(piece_type::queen, VColor);
-		info.own_rooks = b.get_board(piece_type::rook, VColor);
-
-		info.enemy_bishops = b.get_board(piece_type::bishop, ecolor);
-		info.enemy_king = b.get_board(piece_type::king, ecolor);
-		info.enemy_knights = b.get_board(piece_type::knight, ecolor);
-		info.enemy_pawns = b.get_board(piece_type::pawn, ecolor);
-		info.enemy_queens = b.get_board(piece_type::queen, ecolor);
-		info.enemy_rooks = b.get_board(piece_type::rook, ecolor);
-
-		info.own_color_occ = info.own_king | info.own_knights | info.own_bishops
-		    | info.own_queens | info.own_rooks | info.own_pawns;
-		info.enemy_color_occ = info.enemy_bishops | info.enemy_king | info.enemy_knights
-		    | info.enemy_queens | info.enemy_rooks | info.enemy_pawns;
-		info.not_own_color_occ = ~info.own_color_occ;
-		info.occ = info.own_color_occ | info.enemy_color_occ;
-		info.not_occ = ~info.occ;
 	}
 };
 

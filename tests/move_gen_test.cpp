@@ -22,6 +22,11 @@ namespace
 		assert_perft_result(res, exp);
 	}
 
+	void print_results(perft_results res)
+	{
+		printf("Total: %i\n", res.nodes);
+	}
+
 	void benchmark_perft(int depth)
 	{
 		game g;
@@ -34,6 +39,41 @@ namespace
 		printf("measured time in seconds: %f\n", std::chrono::duration_cast<std::chrono::milliseconds>(then - now).count() / 1000.f);
 		printf("===============================\n\n");
 	}
+
+	template<color VColor>
+	void check_branches_inner(game& g, int depth)
+	{
+		color start = VColor;
+		board_info binfo;
+		game_info ginfo = g.get_start_info(start);
+		std::vector<move> moves;
+		g.extract_board<VColor>(binfo);
+		moves = game::gen_all_legal_moves<VColor>(binfo, g.get_start_en_passantable_pawn(), ginfo,g.get_board());
+
+		for (const move& m : moves)
+		{
+			g.get_board().do_move<VColor>(m);
+			printf("\n");
+			g.get_board_const().print_fen();
+			auto res = g.perft(depth - 1);
+			print_results(res);
+			printf("\n");
+			g.get_board().undo_move<VColor>(m);
+		}
+	}
+
+	void check_branches(const std::string& fen, int depth)
+	{
+		game g(fen);
+		if (g.get_start_color() == color::white)
+			check_branches_inner<color::white>(g, depth);
+		else check_branches_inner<color::black>(g, depth);
+	}
+
+	
+
+
+
 }
 
 TEST_CASE("INIT")
@@ -60,6 +100,7 @@ TEST_CASE("Perft Position 2")
 
 	 SECTION("depth = 3")
 	 {
+		check_branches(fen, 3);
 	 	validate_position(g, 3, perft_results{ 97862, 17102, 45, 3162, 0 });
 	 }
 

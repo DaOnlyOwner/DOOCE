@@ -35,6 +35,7 @@ struct board
 	board();
 	board(const std::string& start, bool fen=false);
 	void print() const ;
+	std::string print_fen() const;
 
 	static void print_bitboard(bitboard b);
 
@@ -130,9 +131,10 @@ struct board
 		return static_cast<bool>(attacks & ops::set_square_bit(sq));
 	}
 
-	static inline bool is_king_in_check(bitboard king, bitboard attacks)
+	inline bool is_king_in_check(color c, bitboard attacks)
 	{
-		square king_square = idx_to_sq(ops::num_trailing_zeros(king));
+		square king_square = idx_to_sq(ops::num_trailing_zeros(
+			get_board(piece_type::king, c)));
 		return is_square_attacked(attacks, king_square);
 	}
 
