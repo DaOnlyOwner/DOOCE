@@ -188,7 +188,7 @@ void board::print() const
 	printf("   a b c d e f g h\n\n");
 }
 
-std::string board::print_fen() const
+std::string board::get_fen() const
 {
 	std::string board_repr;
 	board_repr.resize(64, '.');
@@ -235,7 +235,7 @@ std::string board::print_fen() const
 		fen.push_back('/');
 	}
 	fen.pop_back();
-	printf("%s\n", fen.c_str());
+	// printf("%s\n", fen.c_str());
 	return fen;
 }
 

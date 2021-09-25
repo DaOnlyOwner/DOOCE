@@ -18,6 +18,7 @@ WORKDIR /app/build
 RUN cmake ../src -DCMAKE_BUILD_TYPE=Release && cmake --build .
 
 # run the unit tests
-RUN cd tests && ./move_gen_test
+WORKDIR /app/build/tests
+RUN ./move_gen_test > out.txt
 
 # TODO: package the lib binaries

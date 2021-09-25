@@ -35,7 +35,7 @@ struct board
 	board();
 	board(const std::string& start, bool fen=false);
 	void print() const ;
-	std::string print_fen() const;
+	std::string get_fen() const;
 
 	static void print_bitboard(bitboard b);
 
