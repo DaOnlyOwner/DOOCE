@@ -12,6 +12,6 @@ set_target_properties(move_gen_test
         CXX_EXTENSIONS NO
 )
 
-
 target_include_directories(move_gen_test PRIVATE "../include")
 add_test(move_gen_test move_gen_test)
+# use catch2 instead of ctest, see https://github.com/catchorg/Catch2/blob/devel/docs/cmake-integration.md

@@ -1,6 +1,6 @@
-// #include <cstdio>
+#include <cstdio>
 
-// int main()
-// {
-//     printf("HI");
-// }
+int main()
+{
+    printf("HI");
+}

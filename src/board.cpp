@@ -4,6 +4,7 @@
 #include <map>
 #include <cstdio>
 #include <ctype.h>
+#include <algorithm>
 
 std::array<bitboard, 64> board::knight_attacks;
 std::array<bitboard, 64> board::king_attacks;
@@ -127,7 +128,7 @@ board::board(const std::string& start, bool fen)
 	    static_cast<int(*)(int)>(isspace)),to_work_with.end());
 
 	if (to_work_with.size() != 64)
-		throw std::exception("Board has more / less than 64 fields");
+		throw std::runtime_error("Board has more / less than 64 fields");
 	std::map<char, bitboard*> charBitboardMap =
 	{
 		{'N',&get_board(piece_type::knight,color::white)},
