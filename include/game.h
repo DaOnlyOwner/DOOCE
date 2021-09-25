@@ -97,7 +97,7 @@ public:
 
 	// This method is basically only used for castling.
 	template<color VColor>
-	static bitboard gen_all_own_attacks_except_en_passant(const board_info& info)
+	bitboard gen_all_own_attacks_except_en_passant(const board_info& info)
 	{
 		bitboard attacks =
 			gen_all_attacks_from_sliding_piece_type(info.own_bishops, info.occ, &board::gen_attacks_bishop) |
@@ -112,7 +112,7 @@ public:
 	}
 
 	template<color VColor>
-	static bitboard gen_all_enemy_attacks_except_en_passant(const board_info& info)
+	bitboard gen_all_enemy_attacks_except_en_passant(const board_info& info)
 	{
 		bitboard attacks =
 			gen_all_attacks_from_sliding_piece_type(info.enemy_bishops, info.occ, &board::gen_attacks_bishop) |
@@ -128,7 +128,7 @@ public:
 
 	// This method is used to precalc the attack patterns to test if the enemy king is in check
 	template<color VColor>
-	static bitboard gen_all_attack_pattern_except_en_passant(
+	bitboard gen_all_attack_pattern_except_en_passant(
 		attack_pattern& pattern, int& size, const board_info& info)
 	{
 		size = 0;
@@ -152,7 +152,7 @@ public:
 	}
 
 	template<color VColor>
-	static std::vector<move> gen_all_legal_moves(const attack_pattern& pattern, int size,
+	std::vector<move> gen_all_legal_moves(const attack_pattern& pattern, int size,
 		const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo, board& b)
 	{
 		// generate all possible moves (unvalidated)
@@ -171,7 +171,7 @@ public:
 
 			// compute the enemy attacks (bitboard)
 			board_info binfo_after;
-			game::extract_board<ecolor>(binfo_after);
+			extract_board<ecolor>(binfo_after);
 			bitboard attacks = game::gen_all_enemy_attacks_except_en_passant<ecolor>(binfo_after);
 
 			// only append the move if the king is not in check after applying it
@@ -186,7 +186,7 @@ public:
 	}
 
 	template<color VColor>
-	static std::vector<move> gen_all_legal_moves(const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo, board& b)
+	std::vector<move> gen_all_legal_moves(const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo, board& b)
 	{
 		constexpr color ecolor = invert_color(VColor);
 		attack_pattern ap;
@@ -196,7 +196,7 @@ public:
 	}
 
 	template<color VColor>
-	static std::vector<move> gen_all_moves(const attack_pattern& pattern, int size,
+	std::vector<move> gen_all_moves(const attack_pattern& pattern, int size,
 	    const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo)
 	{
 		//board::print_bitboard(pattern[0].attacks);
@@ -228,7 +228,7 @@ private:
 	game_info start_info_black;
 	color start_color;
 	bitboard start_en_passantable_pawn;
-	
+
 	void update_perft_results(const perft_results& res, perft_results& to_update);
 
 	template<color VColor>
@@ -280,7 +280,7 @@ private:
 			    game::game_info_from_move<VColor>(m,ginfo_own);
 
 			board_info binfo_after;
-			game::extract_board<ecolor>(binfo_after);
+			extract_board<ecolor>(binfo_after);
 			attack_pattern pattern_after;
 			int size_after;
 			bitboard attacks = game::gen_all_attack_pattern_except_en_passant<ecolor>(
@@ -304,7 +304,7 @@ private:
 	}
 
 	template<color VColor>
-	static std::pair<game_info, bitboard> game_info_from_move(const move& m, const game_info& previous_info)
+	std::pair<game_info, bitboard> game_info_from_move(const move& m, const game_info& previous_info)
 	{
 		constexpr square rook_queenside = VColor == color::white ? square::a1 : square::a8;
 		constexpr square rook_kingside = VColor == color::white ? square::h1 : square::h8;
@@ -322,10 +322,10 @@ private:
 		return std::make_pair(gi, en_passantable_pawn);
 	}
 
-	static void push_promo_moves(std::vector<move>& out, move& m);
+	void push_promo_moves(std::vector<move>& out, move& m);
 
 	template<color VColor>
-	static void gen_move_castling(const board_info& info, const game_info& ginfo, std::vector<move>& out)
+	void gen_move_castling(const board_info& info, const game_info& ginfo, std::vector<move>& out)
 	{
 		constexpr color ecolor = invert_color(VColor);
 		bitboard attacks = game::gen_all_enemy_attacks_except_en_passant<ecolor>(info);
@@ -351,7 +351,7 @@ private:
 	}
 
 	template<color VColor>
-	static void gen_move_pawn_push(const board_info& info, std::vector<move>& out)
+	void gen_move_pawn_push(const board_info& info, std::vector<move>& out)
 	{
 		bitboard cpy = info.own_pawns;
 		uint idx = 0;
@@ -387,7 +387,7 @@ private:
 	}
 
 	template<color VColor, typename EnPassantFunc, typename ShiftFuncWhite, typename ShiftFuncBlack>
-	static void gen_move_en_passant(const board_info& info, bitboard en_passantable_pawn, std::vector<move>& out,
+	void gen_move_en_passant(const board_info& info, bitboard en_passantable_pawn, std::vector<move>& out,
 	    EnPassantFunc en_passant_fn, ShiftFuncWhite shift_white, ShiftFuncBlack shift_black)
 	{
 		bitboard attack = en_passant_fn(info.own_pawns, en_passantable_pawn);
@@ -406,7 +406,7 @@ private:
 	}
 
 	template<color VColor>
-	static void gen_moves_from_attack_pattern(const attack_pattern& pattern, int i,
+	void gen_moves_from_attack_pattern(const attack_pattern& pattern, int i,
 	    const board_info& info, std::vector<move>& out)
 	{
 		const attack_info& ainfo = pattern[i];
@@ -441,7 +441,7 @@ private:
 	}
 
 	template<color VColor>
-	static bool determine_promo(piece_type ptype, const board_info& info, bitboard set_bit)
+	bool determine_promo(piece_type ptype, const board_info& info, bitboard set_bit)
 	{
 		if (ptype != piece_type::pawn) return {};
 		if constexpr (VColor == color::white)
@@ -449,10 +449,10 @@ private:
 		else return ops::has_bit_set_on_rank(set_bit, 1);
 	}
 
-	static std::optional<piece_type> determine_capturing(const board_info& info, bitboard set_bit);
+	std::optional<piece_type> determine_capturing(const board_info& info, bitboard set_bit);
 
 	template<color VColor>
-	static bitboard gen_attack_info_from_pawns(const board_info& info, attack_pattern& pattern, int& size)
+	bitboard gen_attack_info_from_pawns(const board_info& info, attack_pattern& pattern, int& size)
 	{
 		bitboard attacks = 0ULL;
 		bitboard own_pawns = info.own_pawns;
@@ -478,7 +478,7 @@ private:
 	}
 
 	template<typename GenFn>
-	static bitboard gen_attack_info_from_sliding_piece_type(bitboard piece_occ, const board_info& info,
+	bitboard gen_attack_info_from_sliding_piece_type(bitboard piece_occ, const board_info& info,
 	    attack_pattern& pattern, int& size, piece_type ptype, GenFn fn)
 	{
 		uint idx = 0;
@@ -501,7 +501,7 @@ private:
 	}
 
 	template<typename GenFn>
-	static bitboard gen_attack_info_from_piece_type(bitboard piece_occ, const board_info& info,
+	bitboard gen_attack_info_from_piece_type(bitboard piece_occ, const board_info& info,
 	    attack_pattern& pattern, int& size, piece_type ptype, GenFn fn)
 	{
 		uint idx = 0;
@@ -524,7 +524,7 @@ private:
 	}
 
 	template<typename GenFn>
-	static bitboard gen_all_attacks_from_piece_type(bitboard piece_occ, bitboard occ, GenFn fn)
+	bitboard gen_all_attacks_from_piece_type(bitboard piece_occ, bitboard occ, GenFn fn)
 	{
 		uint idx = 0;
 		bitboard attacks = 0ULL;
@@ -538,7 +538,7 @@ private:
 	}
 
 	template<typename GenFn>
-	static bitboard gen_all_attacks_from_sliding_piece_type(bitboard piece_occ, bitboard occ, GenFn fn)
+	bitboard gen_all_attacks_from_sliding_piece_type(bitboard piece_occ, bitboard occ, GenFn fn)
 	{
 		uint idx = 0;
 		bitboard attacks = 0ULL;

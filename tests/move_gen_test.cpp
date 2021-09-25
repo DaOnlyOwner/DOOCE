@@ -52,7 +52,8 @@ namespace
 		game_info ginfo = g.get_start_info(start);
 		std::vector<move> moves;
 		g.extract_board<VColor>(binfo);
-		moves = game::gen_all_legal_moves<VColor>(binfo, g.get_start_en_passantable_pawn(), ginfo,g.get_board());
+		// TODO: don't pass g.xxx() properties, compute them inside the function
+		moves = g.gen_all_legal_moves<VColor>(binfo, g.get_start_en_passantable_pawn(), ginfo,g.get_board());
 
         // sort the moves lexicographically by fen string
 		std::vector<std::string> fen_strings;
@@ -542,41 +543,41 @@ TEST_CASE("Perft Position 2")
 // 	}
 // }
 
-// TEST_CASE("Initial Perft", "[move_gen]")
-// {
-// 	// initial game position
-// 	game g;
+TEST_CASE("Initial Perft", "[move_gen]")
+{
+	// initial game position
+	game g;
 
-// 	SECTION("depth = 0") {
-// 		validate_position(g, 0, perft_results{ 1, 0, 0, 0, 0 });
-// 	}
+	SECTION("depth = 0") {
+		validate_position(g, 0, perft_results{ 1, 0, 0, 0, 0 });
+	}
 
-// 	SECTION("depth = 1") {
-// 		validate_position(g, 1, perft_results{ 20, 0, 0, 0, 0 });
-// 	}
+	SECTION("depth = 1") {
+		validate_position(g, 1, perft_results{ 20, 0, 0, 0, 0 });
+	}
 
-// 	SECTION("depth = 2") {
-// 		validate_position(g, 2, perft_results{ 400, 0, 0, 0, 0 });
-// 	}
+	SECTION("depth = 2") {
+		validate_position(g, 2, perft_results{ 400, 0, 0, 0, 0 });
+	}
 
-// 	SECTION("depth = 3") {
-// 		validate_position(g, 3, perft_results{ 8902, 34, 0, 0, 0 });
-// 	}
+	SECTION("depth = 3") {
+		validate_position(g, 3, perft_results{ 8902, 34, 0, 0, 0 });
+	}
 
-// 	SECTION("depth = 4") {
-// 		validate_position(g, 4, perft_results{ 197281, 1576, 0, 0, 0 });
-// 	}
+	SECTION("depth = 4") {
+		validate_position(g, 4, perft_results{ 197281, 1576, 0, 0, 0 });
+	}
 
-// 	SECTION("depth = 5")
-// 	{
-// 		validate_position(g, 5, perft_results{ 4865609, 82719, 258, 0, 0 });
-// 	}
+	SECTION("depth = 5")
+	{
+		validate_position(g, 5, perft_results{ 4865609, 82719, 258, 0, 0 });
+	}
 
-//     // TODO: this test takes 10 seconds, think of adding it again if test time doesn't matter too much
-// 	/*SECTION("depth = 6") {
-// 		validate_position(g, 6, perft_results{ 119060324ULL, 2812008ULL, 5248ULL, 0, 0 });
-// 	}*/
-// }
+    // TODO: this test takes 10 seconds, think of adding it again if test time doesn't matter too much
+	SECTION("depth = 6") {
+		validate_position(g, 6, perft_results{ 119060324ULL, 2812008ULL, 5248ULL, 0, 0 });
+	}
+}
 
 // TEST_CASE("Benchmark")
 // {
