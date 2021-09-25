@@ -9,8 +9,8 @@
 
 namespace ops
 {
-	constexpr bitboard notAFile = 0xfefefefefefefefe;
-	constexpr bitboard notHFile = 0x7f7f7f7f7f7f7f7f;
+	constexpr bitboard notHFile = 0xfefefefefefefefe;
+	constexpr bitboard notAFile = 0x7f7f7f7f7f7f7f7f;
 	constexpr bitboard mask_rank(int r)
 	{
 		r -= 1; // first rank == index 0 etc.
@@ -42,32 +42,32 @@ namespace ops
 		// Shifting too far, so that we might end up at the "other" side again (wrapping),
 		// is probably not intended. So we zero out all those moves.
 		// Thus shifting by two or more positions at once is not efficiently possible
-		return (b << 1) & notAFile;  
+		return (b >> 1) & notAFile;
 	}
 
-	inline bitboard no_ea(bitboard b)
+	inline bitboard no_ea(bitboard b) // white pawn right attack
 	{
-		return (b << 9) & notAFile;
+		return (b << 7) & notAFile;
 	}
 
-	inline bitboard so_ea(bitboard b)
+	inline bitboard so_ea(bitboard b) // black pawn right attack
 	{
-		return (b >> 7) & notAFile;
+		return (b >> 9) & notAFile;
 	}
 
 	inline bitboard we(bitboard b)
 	{
-		return (b >> 1) & notHFile;
+		return (b << 1) & notHFile;
 	}
 
-	inline bitboard so_we(bitboard b)
+	inline bitboard so_we(bitboard b) // black pawn left attack
 	{
-		return (b >> 9) & notHFile;
+		return (b >> 7) & notHFile;
 	}
 
-	inline bitboard no_we(bitboard b)
+	inline bitboard no_we(bitboard b) // white pawn left attack
 	{
-		return (b << 7) & notHFile;
+		return (b << 9) & notHFile;
 	}
 
 	inline square to_sq(uint x, uint y)
