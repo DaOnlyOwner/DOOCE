@@ -58,15 +58,15 @@ TEST_CASE("Perft Position 2")
 		validate_position(g, 2, perft_results{ 2039, 351, 1, 91, 0 });
 	}
 
-	// SECTION("depth = 3")
-	// {
-	// 	validate_position(g, 3, perft_results{ 97862, 17102, 45, 3162, 0 });
-	// }
+	 SECTION("depth = 3")
+	 {
+	 	validate_position(g, 3, perft_results{ 97862, 17102, 45, 3162, 0 });
+	 }
 
-	// SECTION("depth = 4")
-	// {
-	// 	validate_position(g, 4, perft_results{ 4085603, 757163, 1929, 128013, 15172 });
-	// }
+	 SECTION("depth = 4")
+	 {
+	 	validate_position(g, 4, perft_results{ 4085603, 757163, 1929, 128013, 15172 });
+	 }
 }
 
 TEST_CASE("Perft Position 3")
@@ -74,23 +74,17 @@ TEST_CASE("Perft Position 3")
 	game g("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
 	SECTION("depth = 1")
 	{
-		auto res = g.perft(1);
-		REQUIRE(res.captures == 1);
-		REQUIRE(res.nodes == 14);
+		validate_position(g, 1, perft_results{ 14,1,0,0,0 });
 	}
 
 	SECTION("depth = 2")
 	{
-		auto res = g.perft(2);
-		REQUIRE(res.captures == 14);
-		REQUIRE(res.nodes == 191);
+		validate_position(g, 2, perft_results{ 191,14,0,0,0 });
 	}
 
 	SECTION("depth = 3")
 	{
-		auto res = g.perft(3);
-		REQUIRE(res.captures == 209);
-		REQUIRE(res.nodes == 2812);
+		validate_position(g, 3, perft_results{ 2812,209,2,0,0 });
 	}
 
 }
@@ -100,18 +94,12 @@ TEST_CASE("Perft Position 4")
 	game g("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
 	SECTION("depth = 1")
 	{
-		auto res = g.perft(1);
-		REQUIRE(res.nodes == 6);
-		REQUIRE(res.captures == 0);
+		validate_position(g, 1, perft_results{ 6,0,0,0,0 });
 	}
 
 	SECTION("depth = 2")
 	{
-		auto res = g.perft(2);
-		REQUIRE(res.promos == 48);
-		REQUIRE(res.nodes == 264);
-		REQUIRE(res.captures == 87);
-		REQUIRE(res.castles == 6);
+		validate_position(g, 2, perft_results{ 264,87,0,6,48 });
 	}
 }
 
@@ -185,7 +173,7 @@ TEST_CASE("Castling")
 			"........"
 			"........"
 			"....K...", ginfo, ginfo_castling, color::black, 0ull);
-		validate_position(g, 1, perft_results{ 15, 0, 0, 1, 0 });
+		validate_position(g, 1, perft_results{ 16, 0, 0, 1, 0 });
 	}
 
 	SECTION("Kingside")
@@ -204,7 +192,7 @@ TEST_CASE("Castling")
 			"........"
 			"........"
 			"....K...", ginfo, ginfo_castling, color::black, 0ull);
-		validate_position(g, 1, perft_results{ 14, 0, 0, 1, 0 });
+		validate_position(g, 1, perft_results{ 15, 0, 0, 1, 0 });
 	}
 }
 
@@ -441,7 +429,7 @@ TEST_CASE("Check and Checkmates")
 			". . . . . . . ."
 			". . . . . . . .", ginfo, ginfo, color::black, 0ull
 		);
-		validate_position(g, 1, perft_results{ 1, 0, 0, 0, 0 });
+		validate_position(g, 1, perft_results{ 0, 0, 0, 0, 0 });
 	}
 }
 

@@ -5,6 +5,8 @@
 #include <cstdio>
 #include <ctype.h>
 #include <algorithm>
+#include <stdexcept>
+	
 
 std::array<bitboard, 64> board::knight_attacks;
 std::array<bitboard, 64> board::king_attacks;
