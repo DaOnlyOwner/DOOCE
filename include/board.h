@@ -133,6 +133,7 @@ struct board
 
 	inline bool is_king_in_check(color c, bitboard attacks)
 	{
+		// TODO: simplify this like '(king_bitboard_after_move & attacks) > 0'
 		square king_square = idx_to_sq(ops::num_trailing_zeros(
 			get_board(piece_type::king, c)));
 		return is_square_attacked(attacks, king_square);

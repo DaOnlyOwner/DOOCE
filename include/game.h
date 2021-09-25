@@ -152,20 +152,36 @@ public:
 	}
 
 	template<color VColor>
-	static std::vector<move> gen_all_legal_moves(const attack_pattern& pattern, int size, const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo, board& b)
+	static std::vector<move> gen_all_legal_moves(const attack_pattern& pattern, int size,
+		const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo, board& b)
 	{
+		// generate all possible moves (unvalidated)
 		constexpr color ecolor = invert_color(VColor);
 		auto moves = gen_all_moves<VColor>(pattern, size, info, en_passantable_pawn, ginfo);
+
+		// initialize legal moves array
 		std::vector<move> moves_legal;
 		moves_legal.reserve(moves.size());
+
+		// go through each of the moves
 		for (const move& m : moves)
 		{
+			// simulate the move
 			b.do_move<VColor>(m);
-			bitboard attacks = game::gen_all_enemy_attacks_except_en_passant<ecolor>(info);
+
+			// compute the enemy attacks (bitboard)
+			board_info binfo_after;
+			game::extract_board<ecolor>(binfo_after);
+			bitboard attacks = game::gen_all_enemy_attacks_except_en_passant<ecolor>(binfo_after);
+
+			// only append the move if the king is not in check after applying it
 			if (!b.is_king_in_check(VColor, attacks))
 				moves_legal.push_back(m);
+
+			// revert the simulated move
 			b.undo_move<VColor>(m);
 		}
+
 		return moves_legal;
 	}
 
