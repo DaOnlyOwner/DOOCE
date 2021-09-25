@@ -1,5 +1,4 @@
 #define CATCH_CONFIG_MAIN  
-#define CATCH_CONFIG_ENABLE_BENCHMARKING
 #include "catch.hpp"
 #include "game.h"
 #include <chrono>
@@ -42,7 +41,8 @@ TEST_CASE("INIT")
 	board::init_all();
 }
 
-TEST_CASE("Move Generation Perft Position 2")
+// Positions from chessprogramming.org
+TEST_CASE("Perft Position 2")
 {
 	// Position from chessprogramming.org
 	std::string fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
@@ -68,6 +68,69 @@ TEST_CASE("Move Generation Perft Position 2")
 	// 	validate_position(g, 4, perft_results{ 4085603, 757163, 1929, 128013, 15172 });
 	// }
 }
+
+TEST_CASE("Perft Position 3")
+{
+	game g("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
+	SECTION("depth = 1")
+	{
+		auto res = g.perft(1);
+		REQUIRE(res.captures == 1);
+		REQUIRE(res.nodes == 14);
+	}
+
+	SECTION("depth = 2")
+	{
+		auto res = g.perft(2);
+		REQUIRE(res.captures == 14);
+		REQUIRE(res.nodes == 191);
+	}
+
+	SECTION("depth = 3")
+	{
+		auto res = g.perft(3);
+		REQUIRE(res.captures == 209);
+		REQUIRE(res.nodes == 2812);
+	}
+
+}
+
+TEST_CASE("Perft Position 4")
+{
+	game g("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
+	SECTION("depth = 1")
+	{
+		auto res = g.perft(1);
+		REQUIRE(res.nodes == 6);
+		REQUIRE(res.captures == 0);
+	}
+
+	SECTION("depth = 2")
+	{
+		auto res = g.perft(2);
+		REQUIRE(res.promos == 48);
+		REQUIRE(res.nodes == 264);
+		REQUIRE(res.captures == 87);
+		REQUIRE(res.castles == 6);
+	}
+}
+
+TEST_CASE("Perft Position 6")
+{
+	game g("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10");
+	SECTION("depth = 1")
+	{
+		auto res = g.perft(1);
+		REQUIRE(res.nodes == 46);
+	}
+
+	SECTION("depth = 2")
+	{
+		auto res = g.perft(2);
+		REQUIRE(res.nodes == 2079);
+	}
+}
+
 
 TEST_CASE("Move generation king")
 {
@@ -195,7 +258,7 @@ TEST_CASE("Move Generation pawn")
 		validate_position(g, 1, perft_results{ 10, 3, 0, 0, 0 });
 	}
 
-	SECTION("Overflow when attacking")
+	SECTION("Shift outside of board")
 	{
 		// TODO: transform position into FEN string
 		game g(
@@ -436,7 +499,7 @@ TEST_CASE("Move Generation Knight")
 	}
 }
 
-TEST_CASE("Move Generation Initial Perft", "[move_gen]")
+TEST_CASE("Initial Perft", "[move_gen]")
 {
 	// initial game position
 	game g;

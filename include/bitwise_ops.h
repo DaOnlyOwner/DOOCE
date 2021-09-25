@@ -18,9 +18,11 @@ namespace ops
 		return b << (r * 8);
 	}
 
+	// Make sure that bitboard has only one set bit.
 	inline bool has_bit_set_on_rank(bitboard b, int r)
 	{
-		return (ops::mask_rank(r) ^ b) == b;
+		bitboard mask = ops::mask_rank(r);
+		return ((mask ^ b) & mask) != mask;
 	}
 
 	template<int VShiftAmount = 1>

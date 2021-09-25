@@ -90,7 +90,7 @@ public:
 
 	template<color VColor>
 	static std::vector<move> gen_all_moves(const attack_pattern& pattern, int size,
-	    const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo, const board& b)
+	    const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo)
 	{
 		//board::print_bitboard(pattern[0].attacks);
 		std::vector<move> out;
@@ -112,7 +112,7 @@ public:
 		game::gen_move_pawn_push<VColor>(info, out);
 
 		// castling
-		game::gen_move_castling<VColor>(info, ginfo, out,b);
+		game::gen_move_castling<VColor>(info, ginfo, out);
 		return out;
 	}
 private:
@@ -165,8 +165,7 @@ private:
 
 		perft_results res_overall{};
 		std::vector<move> moves = game::gen_all_moves<VColor>(
-			pattern, size, binfo, en_passantable_pawn, ginfo_own,b);
-
+			pattern, size, binfo, en_passantable_pawn, ginfo_own);
 		for (const move& m : moves)
 		{
 			b.do_move<VColor>(m);
@@ -219,7 +218,7 @@ private:
 	static void push_promo_moves(std::vector<move>& out, move& m);
 
 	template<color VColor>
-	static void gen_move_castling(const board_info& info, const game_info& ginfo, std::vector<move>& out,const board& b)
+	static void gen_move_castling(const board_info& info, const game_info& ginfo, std::vector<move>& out)
 	{
 		constexpr color ecolor = invert_color(VColor);
 		bitboard attacks = game::gen_all_enemy_attacks_except_en_passant<ecolor>(info);

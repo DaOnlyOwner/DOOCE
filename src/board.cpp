@@ -21,7 +21,7 @@ namespace
 			int y_off = y + i;
 			int x_off = x + i;
 
-			if (ops::contains(x_off, y_off) && (x != x_off && y != y_off))
+			if (ops::contains(x_off, y_off) && !(x == x_off && y == y_off))
 				bc.set(ops::to_idx(x_off, y_off), true);
 		}
 		return bc;
@@ -36,7 +36,7 @@ namespace
 			int y_off = y + i;
 			int x_off = x - i;
 
-			if (ops::contains(x_off, y_off) && (x != x_off && y != y_off))
+			if (ops::contains(x_off, y_off) && !(x == x_off && y == y_off))
 				bc.set(ops::to_idx(x_off, y_off), true);
 		}
 		return bc;
