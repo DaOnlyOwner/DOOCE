@@ -160,5 +160,54 @@ namespace ops
 		 b &= (b - 1);
 	}
 
+	bitboard_constr get_diag(uint x, uint y)
+	{
+		// info: this is init, so don't care about performance
+		bitboard_constr bc(0);
+
+		for (int i = -8; i <= 8; i++)
+		{
+			int y_off = y + i;
+			int x_off = x + i;
+
+			if (ops::contains(x_off, y_off) && !(x == x_off && y == y_off))
+				bc.set(ops::to_idx(x_off, y_off), true);
+		}
+		return bc;
+	}
+
+	bitboard_constr get_antidiag(uint x, uint y)
+	{
+		// info: this is init, so don't care about performance
+		bitboard_constr bc(0);
+
+		for (int i = -8; i <= 8; i++)
+		{
+			int y_off = y + i;
+			int x_off = x - i;
+
+			if (ops::contains(x_off, y_off) && !(x == x_off && y == y_off))
+				bc.set(ops::to_idx(x_off, y_off), true);
+		}
+		return bc;
+	}
+
+	bitboard_constr get_file(uint x, uint y)
+	{
+		return 0x0101010101010101ull << x; // TODO: check if this works
+
+		/*bitboard_constr a_file(0x0101010101010101);
+		uint idx = ops::to_idx(x, y);
+		return (a_file << (idx & 7)) ^ (bitboard_constr(1) << idx);*/
+	}
+
+	bitboard_constr get_rank(uint x, uint y)
+	{
+		return 0xffull << y * 8; // TODO: check if this works
+
+		/*bitboard_constr rank_1(0xff);
+		uint idx = ops::to_idx(x, y);
+		return (rank_1 << (idx & 56)) ^ (bitboard_constr(1) << idx);*/
+	}
 }
 

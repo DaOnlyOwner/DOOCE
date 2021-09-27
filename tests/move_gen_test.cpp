@@ -93,37 +93,37 @@ namespace
 
 TEST_CASE("INIT")
 {
-	board::init_all();
+	game::init_all();
 }
 
-// Positions from chessprogramming.org
-TEST_CASE("Perft Position 2")
-{
-	// Position from chessprogramming.org
-	std::string fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
-	game g(fen);
-
-	// SECTION("depth = 1")
-	// {
-	// 	validate_position(g, 1, perft_results{ 48, 8, 0, 2, 0 });
-	// }
-
-	// SECTION("depth = 2")
-	// {
-	// 	validate_position(g, 2, perft_results{ 2039, 351, 1, 91, 0 });
-	// }
-
-	 SECTION("depth = 3")
-	 {
-		check_branches(fen, 3);
-	 	// validate_position(g, 3, perft_results{ 97862, 17102, 45, 3162, 0 });
-	 }
-
-	//  SECTION("depth = 4")
-	//  {
-	//  	validate_position(g, 4, perft_results{ 4085603, 757163, 1929, 128013, 15172 });
-	//  }
-}
+//// Positions from chessprogramming.org
+//TEST_CASE("Perft Position 2")
+//{
+//	// Position from chessprogramming.org
+//	std::string fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
+//	game g(fen);
+//
+//	// SECTION("depth = 1")
+//	// {
+//	// 	validate_position(g, 1, perft_results{ 48, 8, 0, 2, 0 });
+//	// }
+//
+//	// SECTION("depth = 2")
+//	// {
+//	// 	validate_position(g, 2, perft_results{ 2039, 351, 1, 91, 0 });
+//	// }
+//
+//	 SECTION("depth = 3")
+//	 {
+//		check_branches(fen, 3);
+//	 	// validate_position(g, 3, perft_results{ 97862, 17102, 45, 3162, 0 });
+//	 }
+//
+//	//  SECTION("depth = 4")
+//	//  {
+//	//  	validate_position(g, 4, perft_results{ 4085603, 757163, 1929, 128013, 15172 });
+//	//  }
+//}
 
 // TEST_CASE("Perft Position 3")
 // {
