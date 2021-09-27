@@ -2,86 +2,17 @@
 #include "bitwise_ops.h"
 #include "misc_tools.h"
 
+// init game in start formation
 game::game()
 	: b(), start_info_white({ false,false,false }), start_info_black({ false,false,false }),
 	    start_color(color::white), start_en_passantable_pawn(0) {}
 
-game::game(const std::string& start_board, const game_info& start_info_white,
-    const game_info& start_info_black, color start_color, bitboard start_en_passantable_pawn)
-	: b(start_board), start_info_white(start_info_white), start_info_black(start_info_black),
-	    start_color(start_color), start_en_passantable_pawn(start_en_passantable_pawn) {}
-
-std::string game::get_fen()
+// init game in a specific formation + context
+game::game(board b, game_context context)
+/*: b(start_board), start_info_white(start_info_white), start_info_black(start_info_black),
+	start_color(start_color), start_en_passantable_pawn(start_en_passantable_pawn) {}*/
 {
-	auto board_fen = b.get_fen();
-	std::string color_fen = start_color == color::white ? "w" : "b";
-	std::string castle_fen;
-	if (!start_info_white.has_moved_king && !start_info_white.has_moved_kingside_rook) castle_fen.push_back('K');
-	if (!start_info_white.has_moved_king && !start_info_white.has_moved_queenside_rook) castle_fen.push_back('Q');
-	if (!start_info_black.has_moved_king && !start_info_black.has_moved_kingside_rook) castle_fen.push_back('k');
-	if (!start_info_black.has_moved_king && !start_info_black.has_moved_queenside_rook) castle_fen.push_back('q');
-	return board_fen + " " + color_fen + " " + castle_fen;
-}
-
-game::game(const std::string& fen_str)
-{
-	// TODO: add missing FEN features (en-passant, moves since last pawn move, game round)
-
-	start_en_passantable_pawn = 0ull;
-	auto splitted = misc_tools::split(fen_str, ' ');
-	b = board(splitted[0], true);
-	start_color = (splitted[1] == "w" ? color::white : color::black);
-
-	game_info white{ true, true, true }, black{ true, true, true };
-	for (char c : splitted[2])
-	{
-		if (c == 'Q')
-		{
-			white.has_moved_king = false;
-			white.has_moved_queenside_rook = false;
-		}
-		else if (c == 'q')
-		{
-			black.has_moved_king = false;
-			black.has_moved_queenside_rook = false;
-		}
-		else if (c == 'K')
-		{
-			white.has_moved_king = false;
-			white.has_moved_kingside_rook = false;
-		}
-		else if (c == 'k')
-		{
-			black.has_moved_king = false;
-			black.has_moved_kingside_rook = false;
-		}
-	}
-	start_info_black = black;
-	start_info_white = white;
-}
-
-perft_results game::perft(int depth)
-{
-	board_info binfo;
-	attack_pattern pattern;
-	int size; move m{};
-
-	if (start_color == color::white)
-		game::extract_board<color::white>(binfo);
-	else
-	    game::extract_board<color::black>(binfo);
-
-	if(start_color == color::white)
-		game::gen_all_attack_pattern_except_en_passant<color::white>(pattern, size, binfo);
-	else
-	    game::gen_all_attack_pattern_except_en_passant<color::black>(pattern, size, binfo);
-
-	if (start_color == color::white)
-		return perft_inner<color::white>(depth, start_info_white, start_info_black,
-		    start_en_passantable_pawn, pattern, size, binfo,m);
-	else
-	    return perft_inner<color::black>(depth, start_info_black, start_info_white,
-	        start_en_passantable_pawn, pattern, size, binfo,m);
+	// TODO: add proper initialization here ...
 }
 
 std::optional<piece_type> game::determine_capturing(const board_info& info, bitboard set_bit)
@@ -108,11 +39,90 @@ void game::push_promo_moves(std::vector<move>& out, move& m)
 	out.push_back(m);
 }
 
-void game::update_perft_results(const perft_results& res, perft_results& to_update)
+void game::init_knight_attacks()
 {
-	to_update.captures += res.captures;
-	to_update.castles += res.castles;
-	to_update.en_passants += res.en_passants;
-	to_update.promos += res.promos;
-	to_update.nodes += res.nodes;
+	for (uint i = 0; i < 64; i++)
+	{
+		bitboard_constr b(0);
+		auto [x, y] = ops::from_idx(i);
+
+		std::pair<int, int> possible_pos[8];
+
+		possible_pos[0] = { x - 1, y + 2 }; // top_left
+		possible_pos[1] = { x + 1, y + 2 }; // top_right
+		possible_pos[2] = { x - 2, y + 1 }; // midtop_left
+		possible_pos[3] = { x + 2, y + 1 }; // midtop_right
+
+		possible_pos[4] = { x - 2, y - 1 }; // midbot_left
+		possible_pos[5] = { x + 2, y - 1 }; // midbot_right
+		possible_pos[6] = { x - 1, y - 2 }; // bot_left
+		possible_pos[7] = { x + 1, y - 2 }; // bot_right
+
+		for (uint pos = 0; pos < 8; pos++)
+		{
+			auto [x, y] = possible_pos[pos];
+			if (ops::contains(x, y)) b.set(ops::to_idx(x, y), true);
+		}
+
+		knight_attacks[i] = b.to_ullong();
+	}
+}
+
+void game::init_hq_masks()
+{
+	for (uint x = 0; x < 8; x++)
+	{
+		for (uint y = 0; y < 8; y++)
+		{
+			uint idx = ops::to_idx(x, y);
+			hq_mask mask;
+
+			// Init diag and anti diag.
+			auto diag = ops::get_diag(x, y);
+			auto antidiag = ops::get_antidiag(x, y);
+			auto rank = ops::get_rank(x, y);
+			auto file = ops::get_file(x, y);
+			mask.diagEx = diag.to_ullong();
+			mask.antidiagEx = antidiag.to_ullong();
+			mask.fileEx = file.to_ullong();
+			bitboard_constr mask_constr(0);
+			mask_constr.set(idx, true);
+			mask.mask = mask_constr.to_ullong();
+			hq_masks[idx] = mask;
+		}
+	}
+}
+
+void game::init_king_attacks()
+{
+	for (int x = 0; x < 8; x++)
+	{
+		for (int y = 0; y < 8; y++)
+		{
+			bitboard_constr bc(0);
+			uint idx = ops::to_idx(x, y);
+
+			for (int j = -1; j <= 1; j++)
+			{
+				for (int k = -1; k <= 1; k++)
+				{
+					int x_off = x + j;
+					int y_off = y + k;
+					if (ops::contains(x_off, y_off) && !(x_off == x && y_off == y))
+					{
+						uint idx_inner = ops::to_idx((uint)x_off, (uint)y_off);
+						bc.set(idx_inner, true);
+					}
+				}
+			}
+			king_attacks[idx] = bc.to_ullong();
+		}
+	}
+}
+
+void game::init_all()
+{
+	init_king_attacks();
+	init_hq_masks();
+	init_knight_attacks();
 }

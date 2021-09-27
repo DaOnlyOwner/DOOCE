@@ -11,7 +11,7 @@ static_assert(sizeof(unsigned long long) == sizeof(uint64_t), "unsigned long lon
 
 enum class piece_type : uint
 {
-	pawn=0, rook, bishop, knight, king, queen
+	pawn=0, rook=1, bishop=2, knight=3, king=4, queen=5
 };
 
 struct attack_info
@@ -25,7 +25,7 @@ typedef std::array<attack_info,64> attack_pattern;
 
 enum class color : uint
 {
-	white=0, black
+	white=0, black=1
 };
 
 constexpr inline color invert_color(color c)
@@ -40,6 +40,7 @@ struct piece
 	piece_type type;
 };
 
+// TODO: refactor addressing the bitboard starting with A1=0, A2=1, ..., H1=7, A2=8, ..., H8=63
 enum class square : uint
 {
 	a8=63, b8=62, c8=61, d8=60, e8=59, f8=58, g8=57, h8=56,
@@ -65,7 +66,61 @@ enum class square : uint
 	a8 = 7, b8 = 6, c8 = 5, d8 = 4, e8 = 3, f8 = 2, g8 = 1, h8 = 0
 };*/
 
-
-
 constexpr inline uint sq_to_int(square s) { return static_cast<uint>(s); }
 constexpr inline square idx_to_sq(uint idx) { return static_cast<square>(idx); }
+
+struct game_info
+{
+	bool has_moved_king;
+	bool has_moved_queenside_rook;
+	bool has_moved_kingside_rook;
+};
+
+struct perft_results
+{
+	uint64_t nodes = 0ULL;
+	uint64_t captures = 0ULL;
+	uint64_t en_passants = 0ULL;
+	uint64_t castles = 0ULL;
+	uint64_t promos = 0ULL;
+};
+
+struct game_context
+{
+	game_info black;
+	game_info white;
+	bitboard en_passantable_pawn;
+	color start_color;
+};
+
+struct board_info
+{
+	bitboard own_bishops;
+	bitboard own_king;
+	bitboard own_knights;
+	bitboard own_pawns;
+	bitboard own_queens;
+	bitboard own_rooks;
+	bitboard enemy_bishops;
+	bitboard enemy_king;
+	bitboard enemy_knights;
+	bitboard enemy_queens;
+	bitboard enemy_pawns;
+	bitboard enemy_rooks;
+	bitboard own_color_occ;
+	bitboard enemy_color_occ;
+	bitboard not_own_color_occ;
+	bitboard occ;
+	bitboard not_occ;
+};
+
+struct hq_mask
+{
+	bitboard mask;
+	bitboard diagEx;
+	bitboard antidiagEx;
+	bitboard fileEx;
+	typedef std::array<hq_mask, 64> lt;
+};
+
+typedef std::array<bitboard, 64> move_lt;

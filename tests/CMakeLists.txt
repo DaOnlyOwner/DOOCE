@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.8)
 project(move_gen_test LANGUAGES CXX C)
 
 file(GLOB_RECURSE FILES "../src/*.cpp")
-
 list(FILTER FILES EXCLUDE REGEX "main.cpp")
+
 add_executable(move_gen_test ${FILES} move_gen_test.cpp)
 set_target_properties(move_gen_test
     PROPERTIES
@@ -11,7 +11,7 @@ set_target_properties(move_gen_test
         CXX_STANDARD_REQUIRED YES
         CXX_EXTENSIONS NO
 )
-
 target_include_directories(move_gen_test PRIVATE "../include")
+
 add_test(move_gen_test move_gen_test)
 # use catch2 instead of ctest, see https://github.com/catchorg/Catch2/blob/devel/docs/cmake-integration.md
