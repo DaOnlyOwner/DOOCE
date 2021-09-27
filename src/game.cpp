@@ -11,6 +11,18 @@ game::game(const std::string& start_board, const game_info& start_info_white,
 	: b(start_board), start_info_white(start_info_white), start_info_black(start_info_black),
 	    start_color(start_color), start_en_passantable_pawn(start_en_passantable_pawn) {}
 
+std::string game::get_fen()
+{
+	auto board_fen = b.get_fen();
+	std::string color_fen = start_color == color::white ? "w" : "b";
+	std::string castle_fen;
+	if (!start_info_white.has_moved_king && !start_info_white.has_moved_kingside_rook) castle_fen.push_back('K');
+	if (!start_info_white.has_moved_king && !start_info_white.has_moved_queenside_rook) castle_fen.push_back('Q');
+	if (!start_info_black.has_moved_king && !start_info_black.has_moved_kingside_rook) castle_fen.push_back('k');
+	if (!start_info_black.has_moved_king && !start_info_black.has_moved_queenside_rook) castle_fen.push_back('q');
+	return board_fen + " " + color_fen + " " + castle_fen;
+}
+
 game::game(const std::string& fen_str)
 {
 	// TODO: add missing FEN features (en-passant, moves since last pawn move, game round)

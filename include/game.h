@@ -38,6 +38,7 @@ public:
 		const game_info& start_info_black, color start_color, bitboard start_en_passantable_pawn);
 	game(const std::string& fen);
 
+	std::string get_fen();
 	perft_results perft(int depth);
 
 
@@ -69,7 +70,7 @@ public:
 	}
 
 	template<color VColor>
-	void extract_board(board_info& info)
+	void extract_board()
 	{
 		constexpr color ecolor = invert_color(VColor);
 		info.own_bishops = b.get_board_const(piece_type::bishop, VColor);
@@ -186,13 +187,15 @@ public:
 	}
 
 	template<color VColor>
-	std::vector<move> gen_all_legal_moves(const board_info& info, bitboard en_passantable_pawn, const game_info& ginfo, board& b)
+	std::vector<move> gen_all_legal_moves(bitboard en_passantable_pawn, const game_info& ginfo)
 	{
+		board_info binfo;
+		extract_board<VColor>(binfo);
 		constexpr color ecolor = invert_color(VColor);
 		attack_pattern ap;
 		int size = 0;
 		gen_all_attack_pattern_except_en_passant<VColor>(ap, size, info);
-		return gen_all_legal_moves<VColor>(ap, size, info, en_passantable_pawn, ginfo, b);
+		return gen_all_legal_moves<VColor>(ap, size, binfo, en_passantable_pawn, ginfo, b);
 	}
 
 	template<color VColor>

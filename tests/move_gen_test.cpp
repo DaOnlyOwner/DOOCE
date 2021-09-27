@@ -71,7 +71,7 @@ namespace
         // go through the moves in the FEN order
 		for (const std::string& fen : fen_strings)
 		{
-			auto m = fen2move[fen];
+			const auto& m = fen2move[fen];
 			g.get_board().do_move<VColor>(m);
 			for (int i = 0; i < indent * 2; i++) { printf(" "); }
 			printf("%s\n", fen.c_str());
@@ -96,6 +96,22 @@ TEST_CASE("INIT")
 	board::init_all();
 }
 
+//TEST_CASE("castle")
+//{
+//	game g(
+//		"....k..."
+//		"........"
+//		"........"
+//		"........"
+//		"........"
+//		"........"
+//		"........"
+//		"R...K..R", { false,false,false }, ginfo, color::white, 0ULL);
+//
+////	printf("%s", g.get_board().get_fen().c_str());
+//	check_branches(g.get_fen(), 1);
+//}
+
 // Positions from chessprogramming.org
 TEST_CASE("Perft Position 2")
 {
@@ -116,7 +132,7 @@ TEST_CASE("Perft Position 2")
 	 SECTION("depth = 3")
 	 {
 		check_branches(fen, 3);
-	 	// validate_position(g, 3, perft_results{ 97862, 17102, 45, 3162, 0 });
+	 	//validate_position(g, 3, perft_results{ 97862, 17102, 45, 3162, 0 });
 	 }
 
 	//  SECTION("depth = 4")
@@ -543,41 +559,41 @@ TEST_CASE("Perft Position 2")
 // 	}
 // }
 
-TEST_CASE("Initial Perft", "[move_gen]")
-{
-	// initial game position
-	game g;
-
-	SECTION("depth = 0") {
-		validate_position(g, 0, perft_results{ 1, 0, 0, 0, 0 });
-	}
-
-	SECTION("depth = 1") {
-		validate_position(g, 1, perft_results{ 20, 0, 0, 0, 0 });
-	}
-
-	SECTION("depth = 2") {
-		validate_position(g, 2, perft_results{ 400, 0, 0, 0, 0 });
-	}
-
-	SECTION("depth = 3") {
-		validate_position(g, 3, perft_results{ 8902, 34, 0, 0, 0 });
-	}
-
-	SECTION("depth = 4") {
-		validate_position(g, 4, perft_results{ 197281, 1576, 0, 0, 0 });
-	}
-
-	SECTION("depth = 5")
-	{
-		validate_position(g, 5, perft_results{ 4865609, 82719, 258, 0, 0 });
-	}
-
-    // TODO: this test takes 10 seconds, think of adding it again if test time doesn't matter too much
-	SECTION("depth = 6") {
-		validate_position(g, 6, perft_results{ 119060324ULL, 2812008ULL, 5248ULL, 0, 0 });
-	}
-}
+//TEST_CASE("Initial Perft", "[move_gen]")
+//{
+//	// initial game position
+//	game g;
+//
+//	SECTION("depth = 0") {
+//		validate_position(g, 0, perft_results{ 1, 0, 0, 0, 0 });
+//	}
+//
+//	SECTION("depth = 1") {
+//		validate_position(g, 1, perft_results{ 20, 0, 0, 0, 0 });
+//	}
+//
+//	SECTION("depth = 2") {
+//		validate_position(g, 2, perft_results{ 400, 0, 0, 0, 0 });
+//	}
+//
+//	SECTION("depth = 3") {
+//		validate_position(g, 3, perft_results{ 8902, 34, 0, 0, 0 });
+//	}
+//
+//	SECTION("depth = 4") {
+//		validate_position(g, 4, perft_results{ 197281, 1576, 0, 0, 0 });
+//	}
+//
+//	SECTION("depth = 5")
+//	{
+//		validate_position(g, 5, perft_results{ 4865609, 82719, 258, 0, 0 });
+//	}
+//
+//    // TODO: this test takes 10 seconds, think of adding it again if test time doesn't matter too much
+//	SECTION("depth = 6") {
+//		validate_position(g, 6, perft_results{ 119060324ULL, 2812008ULL, 5248ULL, 0, 0 });
+//	}
+//}
 
 // TEST_CASE("Benchmark")
 // {
