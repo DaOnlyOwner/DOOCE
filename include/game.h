@@ -13,6 +13,7 @@ public:
 
 	std::vector<move> legal_moves();
 
+
 	void do_move(const move& m);
 	void undo_move();
 
@@ -21,12 +22,20 @@ private:
 	board b;
 	std::vector<move> move_list;
 
-	template<typename VColor>
-	void do_move_internal(const move& m);
+	// Cache 
+	attack_list alist;
 
-	template<typename VColor>
-	void undo_move_internal();
+	// Helper functions
+	// gen attack list
 
+	template<color VColor> 
+	bitboard gen_attack_list();
+
+	template<color VColor>
+	bitboard gen_attack_list_from_pawns();
+
+	template<color VColor>
+	bitboard gen_attack_list_from_piece(bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
 
 };
 

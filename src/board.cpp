@@ -142,6 +142,8 @@ void board::recalculate_boards()
 	for (int i = 0; i < 6; i++)
 		white_side |= boards[i][static_cast<uint>(color::white)];
 	whole_board = white_side | black_side;
+	not_black_side = ~black_side;
+	not_white_side = ~white_side;
 }
 
 inline void board::handle_quiet_move(bitboard& own, bitboard from, bitboard to)
@@ -160,8 +162,13 @@ bitboard board::get_board_of_side() const
 	if constexpr (VColor == color::white) return white_side;
 	else return black_side;
 }
-template bitboard board::get_board_of_side<color::white>() const;
-template bitboard board::get_board_of_side<color::black>() const;
+
+template<color VColor>
+bitboard board::get_board_of_side_not() const
+{
+	if constexpr (VColor == color::white) return not_white_side;
+	else return not_black_side;
+}
 
 
 template<color VColor>
@@ -336,6 +343,12 @@ inline void board::undo_move(const move& m)
 	break;
 	}
 }
+
+template bitboard board::get_board_of_side<color::white>() const;
+template bitboard board::get_board_of_side<color::black>() const;
+
+template bitboard board::get_board_of_side_not<color::white>() const;
+template bitboard board::get_board_of_side_not<color::black>() const;
 
 template void board::do_move<color::white>(const move& m);
 template void board::do_move<color::black>(const move& m);

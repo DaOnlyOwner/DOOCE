@@ -31,6 +31,10 @@ public:
 	template<color VColor>
 	bitboard get_board_of_side() const;
 	bitboard get_whole_board() const;
+	
+	template<color VColor>
+	bitboard get_board_of_side_not() const;
+
 	void recalculate_boards();
 
 	// ============================================================
@@ -46,6 +50,7 @@ private:
 	bitboard boards[6][2];
 	bitboard whole_board;
 	bitboard black_side, white_side;
+	bitboard not_black_side, not_white_side;
 
 	inline void handle_quiet_move(bitboard& own, bitboard from, bitboard to);
 };

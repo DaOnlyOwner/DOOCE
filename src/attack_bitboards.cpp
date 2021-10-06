@@ -92,7 +92,7 @@ void gen::init_king_attacks()
 // ============================================================
 //        S L I D E R S   D R A W   G E N E R A T I O N
 // ============================================================
-bitboard gen::gen_attacks_bishop(const board& b, uint bishop_idx)
+bitboard gen::attacks_bishop(const board& b, uint bishop_idx)
 {
 	bitboard occ = b.get_whole_board();
 	auto& mask = hq_masks[bishop_idx];
@@ -100,7 +100,7 @@ bitboard gen::gen_attacks_bishop(const board& b, uint bishop_idx)
 		ops::hyperbola_quintessence(occ, mask.antidiagEx, mask.mask));
 }
 
-bitboard gen::gen_attacks_rook(const board& b, uint rook_idx)
+bitboard gen::attacks_rook(const board& b, uint rook_idx)
 {
 	bitboard occ = b.get_whole_board();
 	constexpr bitboard whole_diag_ex = 9241421688590303745ULL; // Diagonal Ex 
@@ -111,18 +111,18 @@ bitboard gen::gen_attacks_rook(const board& b, uint rook_idx)
 	return (file_attacks | rank_attacks);
 }
 
-bitboard gen::gen_attacks_queen(const board& b, uint nat_idx)
+bitboard gen::attacks_queen(const board& b, uint nat_idx)
 {
-	return gen_attacks_bishop(b, nat_idx) | gen_attacks_rook(b, nat_idx);
+	return attacks_bishop(b, nat_idx) | attacks_rook(b, nat_idx);
 }
 
 // King attack bits
-bitboard gen::gen_attacks_king(uint king_idx)
+bitboard gen::attacks_king(const board& b, uint king_idx)
 {
 	return king_attacks[king_idx];
 }
 
-bitboard gen::gen_attacks_knight(uint knight_idx)
+bitboard gen::attacks_knight(const board& b, uint knight_idx)
 {
 	return (knight_attacks[knight_idx]);
 }
@@ -192,7 +192,7 @@ template bool gen::can_castle_queenside<color::white>(const board& b, bitboard a
 template bool gen::can_castle_queenside<color::black>(const board& b, bitboard attacks);
 
 template<color VColor>
-bitboard gen::gen_attack_pawns_left(const board& b)
+bitboard gen::attack_pawns_left(const board& b)
 {
 	constexpr color opp = invert_color(VColor);
 	bitboard own_pawns = b.get_board(piece_type::pawn, VColor);
@@ -203,11 +203,11 @@ bitboard gen::gen_attack_pawns_left(const board& b)
 	else return ops::so_we(own_pawns) & enemy_occ;
 }
 
-template bitboard gen::gen_attack_pawns_left<color::white>(const board& b);
-template bitboard gen::gen_attack_pawns_left<color::black>(const board& b);
+template bitboard gen::attack_pawns_left<color::white>(const board& b);
+template bitboard gen::attack_pawns_left<color::black>(const board& b);
 
 template<color VColor>
-bitboard gen::gen_attack_pawns_right(const board& b)
+bitboard gen::attack_pawns_right(const board& b)
 {
 	constexpr color opp = invert_color(VColor);
 	bitboard own_pawns = b.get_board(piece_type::pawn, VColor);
@@ -218,11 +218,11 @@ bitboard gen::gen_attack_pawns_right(const board& b)
 	else return ops::so_ea(own_pawns) & enemy_occ;
 }
 
-template bitboard gen::gen_attack_pawns_right<color::white>(const board& b);
-template bitboard gen::gen_attack_pawns_right<color::black>(const board& b);
+template bitboard gen::attack_pawns_right<color::white>(const board& b);
+template bitboard gen::attack_pawns_right<color::black>(const board& b);
 
 template<color VColor>
-bitboard gen::gen_move_pawns_single(const board& b)
+bitboard gen::move_pawns_single(const board& b)
 {
 	bitboard own_pawns = b.get_board(piece_type::pawn, VColor);
 	bitboard not_occ = ~(b.get_whole_board()); // TODO: try to cache this using a member attribute
@@ -232,11 +232,11 @@ bitboard gen::gen_move_pawns_single(const board& b)
 	else return ops::so(own_pawns) & not_occ;
 }
 
-template bitboard gen::gen_move_pawns_single<color::white>(const board& b);
-template bitboard gen::gen_move_pawns_single<color::black>(const board& b);
+template bitboard gen::move_pawns_single<color::white>(const board& b);
+template bitboard gen::move_pawns_single<color::black>(const board& b);
 
 template<color VColor>
-bitboard gen::gen_move_pawns_dbl(const board& b)
+bitboard gen::move_pawns_dbl(const board& b)
 {
 	bitboard own_pawns = b.get_board(piece_type::pawn, VColor);
 	bitboard not_occ = ~b.get_whole_board();
@@ -249,11 +249,11 @@ bitboard gen::gen_move_pawns_dbl(const board& b)
 	else return ops::so<2>(ops::mask_rank(7) & own_pawns) & not_occ & ops::so(not_occ);
 }
 
-template bitboard gen::gen_move_pawns_dbl<color::white>(const board& b);
-template bitboard gen::gen_move_pawns_dbl<color::black>(const board& b);
+template bitboard gen::move_pawns_dbl<color::white>(const board& b);
+template bitboard gen::move_pawns_dbl<color::black>(const board& b);
 
 template<color VColor>
-bitboard gen::gen_en_passant_left(const board& b, bitboard pawns_on_en_passant_square)
+bitboard gen::en_passant_left(const board& b, bitboard pawns_on_en_passant_square)
 {
 	bitboard own_pawns = b.get_board(piece_type::pawn, VColor);
 
@@ -264,11 +264,11 @@ bitboard gen::gen_en_passant_left(const board& b, bitboard pawns_on_en_passant_s
 	else return (ops::so_we(own_pawns & ops::mask_rank(4)) & ops::so(pawns_on_en_passant_square));
 }
 
-template bitboard gen::gen_en_passant_left<color::white>(const board& b, bitboard pawns_on_en_passant_square);
-template bitboard gen::gen_en_passant_left<color::black>(const board& b, bitboard pawns_on_en_passant_square);
+template bitboard gen::en_passant_left<color::white>(const board& b, bitboard pawns_on_en_passant_square);
+template bitboard gen::en_passant_left<color::black>(const board& b, bitboard pawns_on_en_passant_square);
 
 template<color VColor>
-inline bitboard gen::gen_en_passant_right(const board& b, bitboard pawns_on_en_passant_square)
+inline bitboard gen::en_passant_right(const board& b, bitboard pawns_on_en_passant_square)
 {
 	bitboard own_pawns = b.get_board(piece_type::pawn, VColor);
 
@@ -277,5 +277,5 @@ inline bitboard gen::gen_en_passant_right(const board& b, bitboard pawns_on_en_p
 	else return (ops::so_ea(own_pawns & ops::mask_rank(4)) & ops::so(pawns_on_en_passant_square));
 }
 
-template bitboard gen::gen_en_passant_right<color::white>(const board& b, bitboard pawns_on_en_passant_square);
-template bitboard gen::gen_en_passant_right<color::black>(const board& b, bitboard pawns_on_en_passant_square);
+template bitboard gen::en_passant_right<color::white>(const board& b, bitboard pawns_on_en_passant_square);
+template bitboard gen::en_passant_right<color::black>(const board& b, bitboard pawns_on_en_passant_square);

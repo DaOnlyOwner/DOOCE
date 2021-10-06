@@ -21,7 +21,24 @@ struct attack_info
 	unsigned int from;
 };
 
-typedef std::array<attack_info,64> attack_pattern;
+struct attack_list
+{
+	std::array<attack_info, 64> ainfo;
+	int size;
+
+	void add(const attack_info& ai)
+	{
+		ainfo[size++] = ai;
+	}
+
+	void clear()
+	{
+		size = 0;
+	}
+
+};
+
+
 
 enum class color : uint
 {
