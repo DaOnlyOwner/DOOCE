@@ -160,7 +160,7 @@ namespace ops
 		 b &= (b - 1);
 	}
 
-	bitboard_constr get_diag(uint x, uint y)
+	inline bitboard_constr get_diag(uint x, uint y)
 	{
 		// info: this is init, so don't care about performance
 		bitboard_constr bc(0);
@@ -176,7 +176,7 @@ namespace ops
 		return bc;
 	}
 
-	bitboard_constr get_antidiag(uint x, uint y)
+	inline bitboard_constr get_antidiag(uint x, uint y)
 	{
 		// info: this is init, so don't care about performance
 		bitboard_constr bc(0);
@@ -192,7 +192,7 @@ namespace ops
 		return bc;
 	}
 
-	bitboard_constr get_file(uint x, uint y)
+	inline bitboard_constr get_file(uint x, uint y)
 	{
 		return 0x0101010101010101ull << x; // TODO: check if this works
 
@@ -201,7 +201,7 @@ namespace ops
 		return (a_file << (idx & 7)) ^ (bitboard_constr(1) << idx);*/
 	}
 
-	bitboard_constr get_rank(uint x, uint y)
+	inline bitboard_constr get_rank(uint x, uint y)
 	{
 		return 0xffull << y * 8; // TODO: check if this works
 

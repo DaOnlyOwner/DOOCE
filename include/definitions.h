@@ -90,28 +90,7 @@ struct game_context
 	game_info black;
 	game_info white;
 	bitboard en_passantable_pawn;
-	color start_color;
-};
-
-struct board_info
-{
-	bitboard own_bishops;
-	bitboard own_king;
-	bitboard own_knights;
-	bitboard own_pawns;
-	bitboard own_queens;
-	bitboard own_rooks;
-	bitboard enemy_bishops;
-	bitboard enemy_king;
-	bitboard enemy_knights;
-	bitboard enemy_queens;
-	bitboard enemy_pawns;
-	bitboard enemy_rooks;
-	bitboard own_color_occ;
-	bitboard enemy_color_occ;
-	bitboard not_own_color_occ;
-	bitboard occ;
-	bitboard not_occ;
+	color turn;
 };
 
 struct hq_mask

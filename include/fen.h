@@ -1,9 +1,17 @@
 #pragma once
 #include "definitions.h"
-#include "board.h"
 #include "misc_tools.h"
+#include "board.h"
+#include "game.h"
 #include <string>
 
-// TODO: make the declarations from fen.cpp available here
 
-//std::string parse_fen_into_repr(const std::string& str);
+namespace fen
+{
+	
+	std::string board_to_fen(const board& b);
+	board fen_to_board(const std::string& fen);
+
+	std::string game_to_fen(const game& g);
+	game fen_to_game(const std::string& fen);
+}

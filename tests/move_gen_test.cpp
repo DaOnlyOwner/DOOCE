@@ -4,7 +4,8 @@
 #include <chrono>
 #include <map>
 
-game_info ginfo{ true, true, true };
+#if 0 
+game_info ginfo{true, true, true};
 
 namespace
 {
@@ -586,3 +587,4 @@ TEST_CASE("INIT")
 // 	// TODO: this test takes 10 seconds, think of adding it again if test time doesn't matter too much
 // 	//benchmark_perft(6);
 // }
+#endif
