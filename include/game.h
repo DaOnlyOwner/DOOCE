@@ -17,6 +17,11 @@ public:
 	
 	game();
 	game(const board& b, const game_context& start_gc);
+	game(const game& g) = default;
+	game(game&& g) = default;
+	game& operator=(const game&) = default;
+	game& operator=(game&&) = default;
+	~game() = default;
 
 	template<color VColor>
 	std::vector<move> legal_moves();
@@ -28,10 +33,10 @@ public:
 	void undo_move();
 
 	template<color VColor>
-	bool is_in_check();
+	bool is_in_check() const;
 
 	template<color VColor>
-	castle_info can_castle();
+	castle_info can_castle() const;
 
 	const game_context& get_game_context() const;
 
@@ -45,25 +50,27 @@ private:
 	std::vector<std::pair<move,game_context>> move_list;
 
 	// Cache 
-	attack_list alist;
+	//attack_list alist;
 
 	// Helper functions
 	// gen attack list
 
+	
+	
 	template<color VColor>
-	bitboard gen_attack_list();
+	void gen_attack_moves_from_piece(std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
 
 	template<color VColor>
-	bitboard gen_attack_list_from_pawns();
+	void gen_attack_moves_from_pawns(std::vector<move>& out);
 
 	template<color VColor>
-	bitboard gen_attack_list_from_piece(bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
+	void gen_attack_moves_from_pawns_inner(move& m, bitboard, std::vector<move>& out);
 
-	bitboard gen_attack_bb_from_piece(bitboard piece_occ, bitboard(*fn)(const board&, uint));
+	bitboard gen_attack_bb_from_piece(bitboard piece_occ, bitboard(*fn)(const board&, uint)) const;
 
 	// This method is basically only used for castling.
 	template<color VColor>
-	bitboard gen_attack_bb_except_en_passant();
+	bitboard gen_attack_bb_except_en_passant() const;
 
 	template<color VColor>
 	void push_promo_moves(std::vector<move>& out, move& m);
@@ -75,8 +82,8 @@ private:
 	bool add_when_legal(std::vector<move>& out, const move& m);
 
 	template<color VColor>
-	bool determine_promo(piece_type ptype, bitboard set_bit);
-	std::optional<piece_type> determine_capturing(color c, bitboard set_bit);
+	bool determine_promo(bitboard set_bit) const;
+	std::optional<piece_type> determine_capturing(color c, bitboard set_bit) const;
 
 	template<color VColor>
 	void gen_move_pawn_push(std::vector<move>& out);

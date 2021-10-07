@@ -2,75 +2,88 @@
 #include "attack_bitboards.h"
 
 template<color VColor>
-inline bitboard game::gen_attack_list()
+void game::gen_attack_moves_from_piece(std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint))
 {
-	alist.clear();
-	bitboard attacks =
-		gen_attack_list_from_piece<VColor>(b.get_board(piece_type::bishop, VColor), piece_type::bishop, &gen::attacks_bishop)
-		| gen_attack_list_from_piece<VColor>(b.get_board(piece_type::rook, VColor), piece_type::rook, &gen::attacks_rook)
-		| gen_attack_list_from_piece<VColor>(b.get_board(piece_type::queen, VColor), piece_type::queen, &gen::attacks_queen)
-		| gen_attack_list_from_piece<VColor>(b.get_board(piece_type::knight, VColor), piece_type::knight, &gen::attacks_knight)
-		| gen_attack_list_from_piece<VColor>(b.get_board(piece_type::king, VColor), piece_type::king, &gen::attacks_king)
-		| gen_attack_list_from_pawns<VColor>();
+	uint from = 0;
+	bitboard attacks = 0ull;
+	bitboard not_own_color_occ = b.get_board_of_side_not<VColor>();
 
-	// This is already ANDed by not_own_color_occ (in gen_attack_info_from_piece_type),
-	// so I don't need to do that here again.
-	return attacks;
+	move m{};
+	m.set_moved_piece_type(ptype);
+	while (piece_occ != 0ull)
+	{
+		from = ops::num_trailing_zeros(piece_occ);
+		bitboard attacks = fn(b, from) & not_own_color_occ;
+		m.set_from(from);
+		while (attacks != 0)
+		{
+			uint to = ops::num_trailing_zeros(attacks);
+			m.set_to(to);
+			auto captured = determine_capturing(VColor, ops::set_nth_bit(to));
+			m.set_captured_piece_type(captured);
+			move_type mtype = captured.has_value() ? move_type::captures : move_type::quiet;
+			m.set_move_type(mtype);
+			add_when_legal<VColor>(out, m);
+			ops::pop_lsb(attacks);
+		}
+		ops::pop_lsb(piece_occ);
+	}
 }
 
 template<color VColor>
-bitboard game::gen_attack_list_from_pawns()
+void game::gen_attack_moves_from_pawns(std::vector<move>& out)
 {
-	bitboard attacks = 0ull;
 	bitboard own_pawns = b.get_board(piece_type::pawn, VColor);
 	uint idx = 0;
 	while (own_pawns != 0ull)
 	{
 		idx = ops::num_trailing_zeros(own_pawns);
 		bitboard only_pawn = ops::set_nth_bit(idx);
-		attack_info ainfo;
-		ainfo.attacks = gen::attack_pawns_left<VColor>(only_pawn,b);
-		ainfo.attacks |= gen::attack_pawns_right<VColor>(only_pawn,b);
-		if (ainfo.attacks != 0ull)
-		{
-			ainfo.from = idx;
-			ainfo.ptype = piece_type::pawn;
-			alist.add(ainfo);
-			attacks |= ainfo.attacks;
-		}
+		auto attack_left = gen::attack_pawns_left<VColor>(only_pawn, b);
+		auto attack_right = gen::attack_pawns_right<VColor>(only_pawn, b);
+		move m{};
+		m.set_from(idx);
+		m.set_moved_piece_type(piece_type::pawn);
+		if (attack_left != 0ull)
+			gen_attack_moves_from_pawns_inner<VColor>(m, attack_left, out);
+
+		if (attack_right != 0ull)
+			gen_attack_moves_from_pawns_inner<VColor>(m, attack_right, out);
+
 		ops::pop_lsb(own_pawns);
 	}
-	return attacks;
 }
 
 template<color VColor>
-inline bitboard game::gen_attack_list_from_piece(bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint))
+void game::gen_attack_moves_from_pawns_inner(move& m, bitboard attack, std::vector<move>& out)
 {
-	uint idx = 0;
-	bitboard attacks = 0ull;
-	bitboard not_own_color_occ = b.get_board_of_side_not<VColor>();
+	m.set_to(ops::num_trailing_zeros(attack));
+	auto captured = determine_capturing(VColor, attack);
+	bool promo = determine_promo<VColor>(attack);
+	move_type mtype;
 
-	while (piece_occ != 0ull)
+	m.set_captured_piece_type(captured);
+	if (captured.has_value() && promo)
 	{
-		idx = ops::num_trailing_zeros(piece_occ);
-		attack_info ainfo;
-		ainfo.attacks = fn(b, idx) & not_own_color_occ;
-		if (ainfo.attacks != 0ull)
-		{
-			ainfo.from = idx;
-			ainfo.ptype = ptype;
-			alist.add(ainfo);
-			attacks |= ainfo.attacks;
-		}
-		ops::pop_lsb(piece_occ);
+		m.set_move_type(move_type::promo_captures);
+		push_promo_moves<VColor>(out, m);
 	}
-	return attacks;
+	else if (captured.has_value())
+	{
+		m.set_move_type(move_type::captures);
+		add_when_legal<VColor>(out, m);
+	}
+	else if (promo)
+	{
+		m.set_move_type(move_type::promo);
+		push_promo_moves<VColor>(out, m);
+	}
 }
 
 // This method is basically only used for castling.
 
 template<color VColor>
-bitboard game::gen_attack_bb_except_en_passant()
+bitboard game::gen_attack_bb_except_en_passant() const
 {
 	bitboard attacks =
 		gen_attack_bb_from_piece(b.get_board(piece_type::bishop, VColor), &gen::attacks_bishop) |
@@ -84,7 +97,7 @@ bitboard game::gen_attack_bb_except_en_passant()
 	return attacks & b.get_board_of_side_not<VColor>();
 }
 
-inline bitboard game::gen_attack_bb_from_piece(bitboard piece_occ, bitboard(*fn)(const board&, uint))
+bitboard game::gen_attack_bb_from_piece(bitboard piece_occ, bitboard(*fn)(const board&, uint)) const
 {
 	uint idx = 0;
 	bitboard attacks = 0ULL;
@@ -101,7 +114,7 @@ inline bitboard game::gen_attack_bb_from_piece(bitboard piece_occ, bitboard(*fn)
 	return attacks;
 }
 
-std::optional<piece_type> game::determine_capturing(color c, bitboard set_bit)
+std::optional<piece_type> game::determine_capturing(color c, bitboard set_bit) const
 {
 	bitboard not_set_bit = ~set_bit;
 
@@ -120,9 +133,8 @@ std::optional<piece_type> game::determine_capturing(color c, bitboard set_bit)
 }
 
 template<color VColor>
-bool game::determine_promo(piece_type ptype, bitboard set_bit)
+bool game::determine_promo(bitboard set_bit) const
 {
-	if (ptype != piece_type::pawn) return false;
 	if constexpr (VColor == color::white)
 		return ops::has_bit_set_on_rank(set_bit, 8);
 	else return ops::has_bit_set_on_rank(set_bit, 1);
@@ -143,14 +155,14 @@ bool game::add_when_legal(std::vector<move>& out, const move& m)
 }
 
 template<color VColor>
-bool game::is_in_check()
+bool game::is_in_check() const
 {
 	bitboard attacks = gen_attack_bb_except_en_passant<invert_color(VColor)>();
 	return ((b.get_board(piece_type::king, VColor) & attacks) > 0);
 }
 
 template<color VColor>
-inline void game::gen_move_pawn_push(std::vector<move>& out)
+void game::gen_move_pawn_push(std::vector<move>& out)
 {
 	bitboard cpy = b.get_board(piece_type::pawn, VColor);
 	uint idx = 0;
@@ -232,12 +244,15 @@ std::vector<move> game::legal_moves()
 	std::vector<move> out;
 	out.reserve(250);
 
-	// Attack pattern from previous is_king_in_check test
-	for (int i = 0; i < alist.size; i++)
-	{
-		const attack_info& ainfo = alist.ainfo[i];
-		gen_legal_moves_from_attack_list<VColor>(ainfo, out);
-	}
+	// Pawn attacks
+	gen_attack_moves_from_pawns<VColor>(out);
+
+	// Pieces
+	gen_attack_moves_from_piece<VColor>(out, b.get_board(piece_type::bishop, VColor), piece_type::bishop, &gen::attacks_bishop);
+	gen_attack_moves_from_piece<VColor>(out, b.get_board(piece_type::rook, VColor), piece_type::rook, &gen::attacks_rook);
+	gen_attack_moves_from_piece<VColor>(out, b.get_board(piece_type::queen, VColor), piece_type::queen, &gen::attacks_queen);
+	gen_attack_moves_from_piece<VColor>(out, b.get_board(piece_type::knight, VColor), piece_type::knight, &gen::attacks_knight);
+	gen_attack_moves_from_piece<VColor>(out, b.get_board(piece_type::king, VColor),piece_type::king, &gen::attacks_king);
 
 	// en_passant
 	gen_move_en_passant<VColor>(out,
@@ -269,7 +284,7 @@ void game::push_promo_moves(std::vector<move>& out, move& m)
 }
 
 template<color VColor>
-inline void game::gen_legal_moves_from_attack_list(const attack_info& ainfo, std::vector<move>& out)
+void game::gen_legal_moves_from_attack_list(const attack_info& ainfo, std::vector<move>& out)
 {
 	bitboard cpy = ainfo.attacks;
 	uint idx = 0;
@@ -283,7 +298,7 @@ inline void game::gen_legal_moves_from_attack_list(const attack_info& ainfo, std
 		m.set_to(idx);
 		m.set_moved_piece_type(ainfo.ptype);
 		m.set_captured_piece_type(captured);
-		bool promo = determine_promo<VColor>(ainfo.ptype, set_bit);
+		bool promo = determine_promo<VColor>(set_bit);
 		if (promo)
 		{
 			move_type mtype = captured.has_value() ? move_type::promo_captures : move_type::promo;
@@ -332,9 +347,10 @@ void game::undo_move()
 }
 
 template<color VColor>
-game::castle_info game::can_castle()
+game::castle_info game::can_castle() const
 {
-	bitboard attacks = gen_attack_bb_except_en_passant<ecolor>();
+	auto& ginfo = gc.get_game_info(VColor);
+	bitboard attacks = gen_attack_bb_except_en_passant<invert_color(VColor)>();
 	bool can_castle_kingside = gen::can_castle_kingside<VColor>(b, attacks)
 		&& !ginfo.has_moved_king && !ginfo.has_moved_kingside_rook;
 	bool can_castle_queenside = gen::can_castle_queenside<VColor>(b, attacks)
@@ -355,6 +371,8 @@ game::game(const board& b, const game_context& gc) : b(b),gc(gc)
 	move_list.reserve(9000);
 }
 
+
+
 const game_context& game::get_game_context() const
 {
 	return gc;
@@ -365,29 +383,28 @@ const board& game::get_board() const
 	return b;
 }
 
-template bitboard game::gen_attack_bb_except_en_passant<color::white>();
-template bitboard game::gen_attack_bb_except_en_passant<color::black>();
+template bitboard game::gen_attack_bb_except_en_passant<color::white>() const;
+template bitboard game::gen_attack_bb_except_en_passant<color::black>() const;
 
-template bitboard game::gen_attack_list_from_piece<color::white>(bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
-template bitboard game::gen_attack_list_from_piece<color::black>(bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
-
-template bitboard game::gen_attack_list_from_pawns<color::white>();
-template bitboard game::gen_attack_list_from_pawns<color::black>();
-
-template bitboard game::gen_attack_list<color::white>();
-template bitboard game::gen_attack_list<color::black>();
-
-template bool game::determine_promo<color::white>(piece_type ptype,bitboard set_bit);
-template bool game::determine_promo<color::black>(piece_type ptype,bitboard set_bit);
+template bool game::determine_promo<color::white>(bitboard set_bit) const;
+template bool game::determine_promo<color::black>(bitboard set_bit) const;
 
 template bool game::add_when_legal<color::white>(std::vector<move>& out, const move& m);
 template bool game::add_when_legal<color::black>(std::vector<move>& out, const move& m);
 
-template bool game::is_in_check<color::white>();
-template bool game::is_in_check<color::black>();
+template bool game::is_in_check<color::white>() const;
+template bool game::is_in_check<color::black>() const;
 
 template void game::push_promo_moves<color::white>(std::vector<move>& out, move& m);
 template void game::push_promo_moves<color::black>(std::vector<move>& out, move& m);
+
+template void game::gen_attack_moves_from_pawns<color::white>(std::vector<move>& out);
+template void game::gen_attack_moves_from_pawns<color::black>(std::vector<move>& out);
+
+template void game::gen_attack_moves_from_piece<color::white>
+(std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
+template void game::gen_attack_moves_from_piece<color::black>
+(std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
 
 template void game::gen_legal_moves_from_attack_list<color::white>(const attack_info& ainfo, std::vector<move>& out);
 template void game::gen_legal_moves_from_attack_list<color::black>(const attack_info& ainfo, std::vector<move>& out);
@@ -410,8 +427,8 @@ template void game::do_move<color::black>(const move& m);
 template void game::undo_move<color::white>();
 template void game::undo_move<color::black>();
 
-template game::castle_info game::can_castle<color::white>();
-template game::castle_info game::can_castle<color::black>();
+template game::castle_info game::can_castle<color::white>() const;
+template game::castle_info game::can_castle<color::black>() const;
 
 //// init game in start formation
 //game::game()

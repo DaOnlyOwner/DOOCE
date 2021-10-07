@@ -233,5 +233,5 @@ game fen::fen_to_game(const std::string& fen)
 	}
 	gc.set_game_info(color::black, black);
 	gc.set_game_info(color::white, white);
-	return gc;
+	return game(b,gc);
 }
