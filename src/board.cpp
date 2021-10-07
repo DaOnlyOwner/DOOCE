@@ -69,6 +69,7 @@ board::board(const std::string& start) : boards{}
 		bitboard* b = charBitboardMap[c];
 		*b |= ops::set_nth_bit(ops::flip_idx(i));
 	}
+	recalculate_boards();
 }
 
 std::string board::pretty() const
@@ -256,6 +257,7 @@ inline void board::do_move(const move& m)
 	}
 	break;
 	}
+	recalculate_boards();
 }
 
 template<color VColor>
@@ -342,6 +344,7 @@ inline void board::undo_move(const move& m)
 	}
 	break;
 	}
+	recalculate_boards();
 }
 
 template bitboard board::get_board_of_side<color::white>() const;

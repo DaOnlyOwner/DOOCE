@@ -93,15 +93,6 @@ struct game_info
 	bool has_moved_kingside_rook;
 };
 
-struct perft_results
-{
-	uint64_t nodes = 0ULL;
-	uint64_t captures = 0ULL;
-	uint64_t en_passants = 0ULL;
-	uint64_t castles = 0ULL;
-	uint64_t promos = 0ULL;
-};
-
 struct game_context
 {
 	game_info side[2] = { {false,false,false},{false,false,false} };

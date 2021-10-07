@@ -204,7 +204,7 @@ game fen::fen_to_game(const std::string& fen)
 	game_context gc;
 	gc.en_passantable_pawn = 0ull;
 	auto splitted = misc_tools::split(fen, ' ');
-	board b(splitted[0]);
+	board b = fen::fen_to_board(splitted[0]);
 	gc.turn = (splitted[1] == "w" ? color::white : color::black);
 
 	game_info white{ true, true, true }, black{ true, true, true };

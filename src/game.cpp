@@ -116,13 +116,14 @@ bitboard game::gen_attack_bb_from_piece(bitboard piece_occ, bitboard(*fn)(const 
 
 std::optional<piece_type> game::determine_capturing(color c, bitboard set_bit) const
 {
+	color ec = invert_color(c);
 	bitboard not_set_bit = ~set_bit;
 
-	bitboard p = b.get_board(piece_type::pawn, c);
-	bitboard b_ = b.get_board(piece_type::bishop, c);
-	bitboard n = b.get_board(piece_type::knight, c);
-	bitboard r = b.get_board(piece_type::rook, c);
-	bitboard q = b.get_board(piece_type::queen,c);
+	bitboard p = b.get_board(piece_type::pawn, ec);
+	bitboard b_ = b.get_board(piece_type::bishop, ec);
+	bitboard n = b.get_board(piece_type::knight, ec);
+	bitboard r = b.get_board(piece_type::rook, ec);
+	bitboard q = b.get_board(piece_type::queen, ec);
 
 	if ((p & not_set_bit) != p) return { piece_type::pawn };
 	else if ((b_ & not_set_bit) != b_) return piece_type::bishop;
@@ -284,39 +285,6 @@ void game::push_promo_moves(std::vector<move>& out, move& m)
 }
 
 template<color VColor>
-void game::gen_legal_moves_from_attack_list(const attack_info& ainfo, std::vector<move>& out)
-{
-	bitboard cpy = ainfo.attacks;
-	uint idx = 0;
-	while (cpy != 0)
-	{
-		move m{};
-		idx = ops::num_trailing_zeros(cpy);
-		bitboard set_bit = ops::set_nth_bit(idx);
-		auto captured = determine_capturing(VColor, set_bit);
-		m.set_from(ainfo.from);
-		m.set_to(idx);
-		m.set_moved_piece_type(ainfo.ptype);
-		m.set_captured_piece_type(captured);
-		bool promo = determine_promo<VColor>(set_bit);
-		if (promo)
-		{
-			move_type mtype = captured.has_value() ? move_type::promo_captures : move_type::promo;
-			m.set_move_type(mtype);
-			push_promo_moves<VColor>(out, m);
-		}
-
-		else
-		{
-			move_type mtype = captured.has_value() ? move_type::captures : move_type::quiet;
-			m.set_move_type(mtype);
-			add_when_legal<VColor>(out, m);
-		}
-		ops::pop_lsb(cpy);
-	}
-}
-
-template<color VColor>
 void game::do_move(const move& m)
 {
 
@@ -371,6 +339,8 @@ game::game(const board& b, const game_context& gc) : b(b),gc(gc)
 	move_list.reserve(9000);
 }
 
+game::game(const std::string& board_repr, const game_context& gc) : b(board_repr), gc(gc)
+{}
 
 
 const game_context& game::get_game_context() const
@@ -405,9 +375,6 @@ template void game::gen_attack_moves_from_piece<color::white>
 (std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
 template void game::gen_attack_moves_from_piece<color::black>
 (std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
-
-template void game::gen_legal_moves_from_attack_list<color::white>(const attack_info& ainfo, std::vector<move>& out);
-template void game::gen_legal_moves_from_attack_list<color::black>(const attack_info& ainfo, std::vector<move>& out);
 
 template void game::gen_move_pawn_push<color::white>(std::vector<move>& out);
 template void game::gen_move_pawn_push<color::black>(std::vector<move>& out);
