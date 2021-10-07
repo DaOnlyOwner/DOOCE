@@ -104,10 +104,13 @@ struct perft_results
 
 struct game_context
 {
-	game_info black;
-	game_info white;
-	bitboard en_passantable_pawn;
-	color turn;
+	game_info side[2] = { {false,false,false},{false,false,false} };
+	bitboard en_passantable_pawn = 0ULL;
+	color turn = color::white;
+	game_info& get_game_info(color c) { return side[static_cast<uint>(c)]; }
+	const game_info& get_game_info(color c) const { return side[static_cast<uint>(c)]; }
+
+	void set_game_info(color c, const game_info& info) { side[static_cast<uint>(c)] = info; }
 };
 
 struct hq_mask

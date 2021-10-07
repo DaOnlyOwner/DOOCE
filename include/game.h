@@ -9,18 +9,40 @@
 class game
 {
 public:
-	game(const board& b, const game_context& gc);
+	struct castle_info
+	{
+		bool kingside;
+		bool queenside;
+	};
+	
+	game();
+	game(const board& b, const game_context& start_gc);
 
+	template<color VColor>
 	std::vector<move> legal_moves();
 
-
+	template<color VColor>
 	void do_move(const move& m);
+
+	template<color VColor>
 	void undo_move();
+
+	template<color VColor>
+	bool is_in_check();
+
+	template<color VColor>
+	castle_info can_castle();
+
+	const game_context& get_game_context() const;
+
+	const board& get_board() const;
+
 
 private:
 	game_context gc;
 	board b;
-	std::vector<move> move_list;
+	// Retrieving the game_context from the stack is much simpler.
+	std::vector<std::pair<move,game_context>> move_list;
 
 	// Cache 
 	attack_list alist;
@@ -28,7 +50,7 @@ private:
 	// Helper functions
 	// gen attack list
 
-	template<color VColor> 
+	template<color VColor>
 	bitboard gen_attack_list();
 
 	template<color VColor>
@@ -37,6 +59,37 @@ private:
 	template<color VColor>
 	bitboard gen_attack_list_from_piece(bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
 
+	bitboard gen_attack_bb_from_piece(bitboard piece_occ, bitboard(*fn)(const board&, uint));
+
+	// This method is basically only used for castling.
+	template<color VColor>
+	bitboard gen_attack_bb_except_en_passant();
+
+	template<color VColor>
+	void push_promo_moves(std::vector<move>& out, move& m);
+
+	template<color VColor>
+	void gen_legal_moves_from_attack_list(const attack_info& ainfo, std::vector<move>& out);
+
+	template<color VColor>
+	bool add_when_legal(std::vector<move>& out, const move& m);
+
+	template<color VColor>
+	bool determine_promo(piece_type ptype, bitboard set_bit);
+	std::optional<piece_type> determine_capturing(color c, bitboard set_bit);
+
+	template<color VColor>
+	void gen_move_pawn_push(std::vector<move>& out);
+
+	typedef bitboard(*en_passant_fn)(const board&, bitboard);
+	typedef bitboard(*shift_func)(bitboard);
+
+	template<color VColor>
+	void gen_move_en_passant(std::vector<move>& out,
+		en_passant_fn efn, shift_func shift_white, shift_func shift_black);
+
+	template<color VColor>
+	void gen_move_castling(std::vector<move>& out);
 };
 
 //class game

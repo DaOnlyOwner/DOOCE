@@ -44,18 +44,18 @@ namespace gen
 	//           P A W N   M O V E   G E N E R A T I O N
 	// ============================================================
 
-
+	// I need to pass pawns because sometimes I calculate for all pawns, sometimes for just one
 	template<color VColor>
-	bitboard attack_pawns_left(const board& b);
+	bitboard attack_pawns_left(bitboard pawns, const board& b);
 	
 	template<color VColor>
-	bitboard attack_pawns_right(const board& b);
+	bitboard attack_pawns_right(bitboard pawns, const board& b);
 
 	template<color VColor>
-	bitboard move_pawns_single(const board& b);
+	bitboard move_pawns_single(bitboard pawns,const board& b);
 
 	template<color VColor>
-	bitboard move_pawns_dbl(const board& b);
+	bitboard move_pawns_dbl(bitboard pawns, const board& b);
 
 	// This method expects as input an occupancy bitboard where only pawns (actually just one)  are set that can be captured en passant, i.e. that moved double.
 	template<color VColor>

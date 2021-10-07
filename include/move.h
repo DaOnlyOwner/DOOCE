@@ -41,12 +41,12 @@ struct move
 		this->to = to;
 	}
 
-	void set_promo_piece_type(const std::optional<piece_type> ptype)
+	void set_promo_piece_type(const std::optional<piece_type>& ptype)
 	{
 		promo = ptype;
 	}
 
-	void set_captured_piece_type(const std::optional<piece_type> ctype)
+	void set_captured_piece_type(const std::optional<piece_type>& ctype)
 	{
 		captured = ctype;
 	}

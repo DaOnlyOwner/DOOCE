@@ -27,9 +27,6 @@ namespace
 	}
 }
 
-
-
-
 /*std::string game::get_fen()
 {
 	auto board_fen = b.get_fen();
@@ -183,4 +180,58 @@ board fen::fen_to_board(const std::string& fen)
 {
 	std::string repr = parse_fen_into_repr(fen);
 	return board(repr);
+}
+
+// TODO Add missing fen parameters here
+std::string fen::game_to_fen(const game& g)
+{
+	auto board_fen = fen::board_to_fen(g.get_board());
+	std::string color_fen = g.get_game_context().turn == color::white ? "w" : "b";
+	std::string castle_fen;
+	auto& info_white = g.get_game_context().get_game_info(color::white);
+	auto& info_black = g.get_game_context().get_game_info(color::black);
+
+	if (!info_white.has_moved_king && !info_white.has_moved_kingside_rook) castle_fen.push_back('K');
+	if (!info_white.has_moved_king && !info_white.has_moved_queenside_rook) castle_fen.push_back('Q');
+	if (!info_black.has_moved_king && !info_black.has_moved_kingside_rook) castle_fen.push_back('k');
+	if (!info_black.has_moved_king && !info_black.has_moved_queenside_rook) castle_fen.push_back('q');
+	return board_fen + " " + color_fen + " " + castle_fen;
+}
+
+game fen::fen_to_game(const std::string& fen)
+{
+	// TODO: add missing FEN features (en-passant, moves since last pawn move, game round)
+	game_context gc;
+	gc.en_passantable_pawn = 0ull;
+	auto splitted = misc_tools::split(fen, ' ');
+	board b(splitted[0]);
+	gc.turn = (splitted[1] == "w" ? color::white : color::black);
+
+	game_info white{ true, true, true }, black{ true, true, true };
+	for (char c : splitted[2])
+	{
+		if (c == 'Q')
+		{
+			white.has_moved_king = false;
+			white.has_moved_queenside_rook = false;
+		}
+		else if (c == 'q')
+		{
+			black.has_moved_king = false;
+			black.has_moved_queenside_rook = false;
+		}
+		else if (c == 'K')
+		{
+			white.has_moved_king = false;
+			white.has_moved_kingside_rook = false;
+		}
+		else if (c == 'k')
+		{
+			black.has_moved_king = false;
+			black.has_moved_kingside_rook = false;
+		}
+	}
+	gc.set_game_info(color::black, black);
+	gc.set_game_info(color::white, white);
+	return gc;
 }

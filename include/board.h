@@ -15,6 +15,10 @@ class board
 public:
 	board();
 	board(const std::string& start);
+	board(const board& b) = default;
+	board(board&& b) = default;
+	board& operator=(const board& b) = default;
+	board& operator=(board&& b) = default;
 
 	// ============================================================
 	//							P R I N T

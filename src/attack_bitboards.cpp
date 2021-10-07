@@ -192,10 +192,9 @@ template bool gen::can_castle_queenside<color::white>(const board& b, bitboard a
 template bool gen::can_castle_queenside<color::black>(const board& b, bitboard attacks);
 
 template<color VColor>
-bitboard gen::attack_pawns_left(const board& b)
+bitboard gen::attack_pawns_left(bitboard own_pawns, const board& b)
 {
 	constexpr color opp = invert_color(VColor);
-	bitboard own_pawns = b.get_board(piece_type::pawn, VColor);
 	bitboard enemy_occ = b.get_board_of_side<opp>(); // TODO: try to cache this using a member attribute
 
 	if constexpr (VColor == color::white)
@@ -203,14 +202,13 @@ bitboard gen::attack_pawns_left(const board& b)
 	else return ops::so_we(own_pawns) & enemy_occ;
 }
 
-template bitboard gen::attack_pawns_left<color::white>(const board& b);
-template bitboard gen::attack_pawns_left<color::black>(const board& b);
+template bitboard gen::attack_pawns_left<color::white>(bitboard, const board& b);
+template bitboard gen::attack_pawns_left<color::black>(bitboard, const board& b);
 
 template<color VColor>
-bitboard gen::attack_pawns_right(const board& b)
+bitboard gen::attack_pawns_right(bitboard own_pawns, const board& b)
 {
 	constexpr color opp = invert_color(VColor);
-	bitboard own_pawns = b.get_board(piece_type::pawn, VColor);
 	bitboard enemy_occ = b.get_board_of_side<opp>(); // TODO: try to cache this using a member attribute
 
 	if constexpr (VColor == color::white)
@@ -218,13 +216,12 @@ bitboard gen::attack_pawns_right(const board& b)
 	else return ops::so_ea(own_pawns) & enemy_occ;
 }
 
-template bitboard gen::attack_pawns_right<color::white>(const board& b);
-template bitboard gen::attack_pawns_right<color::black>(const board& b);
+template bitboard gen::attack_pawns_right<color::white>(bitboard, const board& b);
+template bitboard gen::attack_pawns_right<color::black>(bitboard, const board& b);
 
 template<color VColor>
-bitboard gen::move_pawns_single(const board& b)
+bitboard gen::move_pawns_single(bitboard own_pawns, const board& b)
 {
-	bitboard own_pawns = b.get_board(piece_type::pawn, VColor);
 	bitboard not_occ = ~(b.get_whole_board()); // TODO: try to cache this using a member attribute
 
 	if constexpr (VColor == color::white)
@@ -232,13 +229,12 @@ bitboard gen::move_pawns_single(const board& b)
 	else return ops::so(own_pawns) & not_occ;
 }
 
-template bitboard gen::move_pawns_single<color::white>(const board& b);
-template bitboard gen::move_pawns_single<color::black>(const board& b);
+template bitboard gen::move_pawns_single<color::white>(bitboard own_pawns, const board& b);
+template bitboard gen::move_pawns_single<color::black>(bitboard own_pawns, const board& b);
 
 template<color VColor>
-bitboard gen::move_pawns_dbl(const board& b)
+bitboard gen::move_pawns_dbl(bitboard own_pawns, const board& b)
 {
-	bitboard own_pawns = b.get_board(piece_type::pawn, VColor);
 	bitboard not_occ = ~b.get_whole_board();
 
 	if constexpr (VColor == color::white)
@@ -249,8 +245,8 @@ bitboard gen::move_pawns_dbl(const board& b)
 	else return ops::so<2>(ops::mask_rank(7) & own_pawns) & not_occ & ops::so(not_occ);
 }
 
-template bitboard gen::move_pawns_dbl<color::white>(const board& b);
-template bitboard gen::move_pawns_dbl<color::black>(const board& b);
+template bitboard gen::move_pawns_dbl<color::white>(bitboard own_pawns, const board& b);
+template bitboard gen::move_pawns_dbl<color::black>(bitboard own_pawns, const board& b);
 
 template<color VColor>
 bitboard gen::en_passant_left(const board& b, bitboard pawns_on_en_passant_square)
