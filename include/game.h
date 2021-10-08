@@ -9,11 +9,6 @@
 class game
 {
 public:
-	struct castle_info
-	{
-		bool kingside;
-		bool queenside;
-	};
 	
 	game();
 	game(const board& b, const game_context& start_gc);
@@ -37,7 +32,7 @@ public:
 	bool is_in_check() const;
 
 	template<color VColor>
-	castle_info can_castle() const;
+	std::pair<bool,bool> can_castle() const;
 
 	const game_context& get_game_context() const;
 

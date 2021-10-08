@@ -64,5 +64,9 @@ namespace gen
 	template<color VColor>
 	bitboard en_passant_right(const board& b, bitboard pawns_on_en_passant_square);
 
+	template<color VColor>
+	bitboard attack_pawns_castle_queenside(bitboard pawns, const board& b);
 
+	template<color VColor>
+	bitboard attack_pawns_castle(bitboard pawns);
 }

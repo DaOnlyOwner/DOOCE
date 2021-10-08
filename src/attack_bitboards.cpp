@@ -275,3 +275,21 @@ inline bitboard gen::en_passant_right(const board& b, bitboard pawns_on_en_passa
 
 template bitboard gen::en_passant_right<color::white>(const board& b, bitboard pawns_on_en_passant_square);
 template bitboard gen::en_passant_right<color::black>(const board& b, bitboard pawns_on_en_passant_square);
+
+template<color VColor>
+bitboard gen::attack_pawns_castle(bitboard pawns)
+{
+	bitboard attacks;
+
+	if constexpr (VColor == color::white)
+		attacks = ops::no_we(pawns);
+	else attacks = ops::so_we(pawns);
+
+	if constexpr (VColor == color::white)
+		return attacks | ops::no_ea(pawns);
+	else return attacks | ops::so_ea(pawns);
+
+}
+
+template bitboard gen::attack_pawns_castle<color::white>(bitboard pawns);
+template bitboard gen::attack_pawns_castle<color::black>(bitboard pawns);

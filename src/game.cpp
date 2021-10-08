@@ -73,11 +73,21 @@ void game::gen_attack_moves_from_pawns_inner(move& m, bitboard attack, std::vect
 		m.set_move_type(move_type::captures);
 		add_when_legal<VColor>(out, m);
 	}
-	else if (promo)
+	else
 	{
+		printf("This text should never be printed. Something went wrong in gen_attack_moves_from_pawns_inner()!\n");
+	}
+	// This should never happen
+	/*else if (promo)
+	{
+		printf("This text should never be printed. Something went wrong in gen_attack_moves_from_pawns_inner()!\n");
 		m.set_move_type(move_type::promo);
 		push_promo_moves<VColor>(out, m);
 	}
+	else
+	{
+		printf("This text should never be printed. Something went wrong in gen_attack_moves_from_pawns_inner()!\n");
+	}*/
 }
 
 // This method is basically only used for castling.
@@ -181,9 +191,18 @@ void game::gen_move_pawn_push(std::vector<move>& out)
 		}
 		uint to = ops::num_trailing_zeros(single);
 		m.set_to(to);
+		bool promo = determine_promo<VColor>(single);
 		m.set_moved_piece_type(piece_type::pawn);
-		m.set_move_type(move_type::pawn_single);
-		add_when_legal<VColor>(out, m);
+		if (promo)
+		{
+			m.set_move_type(move_type::promo);
+			push_promo_moves<VColor>(out, m);
+		}
+		else
+		{
+			m.set_move_type(move_type::pawn_single);
+			add_when_legal<VColor>(out, m);
+		}
 		bitboard dbl = gen::move_pawns_dbl<VColor>(set_bit, b);
 		if (dbl == 0ULL)
 		{
@@ -220,10 +239,10 @@ template<color VColor>
 void game::gen_move_castling(std::vector<move>& out)
 {
 	constexpr color ecolor = invert_color(VColor);
-	game_info ginfo = gc.get_game_info(VColor);
+	castling_info ginfo = gc.get_game_info(VColor);
 	auto [can_castle_kingside, can_castle_queenside] = can_castle<VColor>();
 	move_type mtype;
-	piece_type moved = (piece_type::king);
+	piece_type moved = piece_type::king;
 
 	if (can_castle_kingside)
 	{
@@ -246,6 +265,7 @@ std::vector<move> game::legal_moves()
 	out.reserve(250);
 
 	// Pawn attacks
+	printf("%s\n",b.pretty().c_str());
 	gen_attack_moves_from_pawns<VColor>(out);
 
 	// Pieces
@@ -287,21 +307,44 @@ void game::push_promo_moves(std::vector<move>& out, move& m)
 template<color VColor>
 void game::do_move(const move& m)
 {
-
+	move_list.push_back(std::make_pair(m, gc));
 	constexpr square rook_queenside = VColor == color::white ? square::a1 : square::a8;
 	constexpr square rook_kingside = VColor == color::white ? square::h1 : square::h8;
-	game_info& gi = gc.get_game_info(VColor);
+
+	constexpr square rook_queenside_opp = VColor == color::white ? square::a8 : square::a1;
+	constexpr square rook_kingside_opp = VColor == color::white ? square::h8 : square::h1;
+
+	castling_info& gi = gc.get_game_info(VColor);
 	gi.has_moved_king = (m.get_moved_piece_type() == piece_type::king || gi.has_moved_king);
 	// Here and next stmt not accounting for castling, but that doesn't matter because then has_moved_king is set to true.
 	gi.has_moved_kingside_rook = ((m.get_moved_piece_type() == piece_type::rook
 		&& (idx_to_sq(m.get_from_as_idx()) == rook_kingside)) || gi.has_moved_kingside_rook);
-	gi.has_moved_kingside_rook = ((m.get_moved_piece_type() == piece_type::rook
+	gi.has_moved_queenside_rook = ((m.get_moved_piece_type() == piece_type::rook
 		&& (idx_to_sq(m.get_from_as_idx()) == rook_queenside)) || gi.has_moved_queenside_rook);
+
+	if (m.get_move_type() == move_type::captures || m.get_move_type() == move_type::promo_captures)
+	{
+		castling_info& gi_opp = gc.get_game_info(invert_color(VColor));
+		// The rook has been captured without it moving -> set the flag to false
+		gi_opp.has_moved_kingside_rook = (m.get_captured_piece_type() == piece_type::rook
+			&& idx_to_sq(m.get_to_as_idx()) == rook_kingside_opp) || gi_opp.has_moved_kingside_rook; 
+		gi_opp.has_moved_queenside_rook = (m.get_captured_piece_type() == piece_type::rook
+			&& idx_to_sq(m.get_to_as_idx()) == rook_queenside_opp) || gi_opp.has_moved_queenside_rook;
+	}
+
+	gc.half_move_clock++;
 	if (m.get_move_type() == move_type::pawn_double)
+	{
 		gc.en_passantable_pawn = m.get_to();
+	}
+	else gc.en_passantable_pawn = 0ULL;
+	if (m.get_moved_piece_type() == piece_type::pawn || m.get_move_type() == move_type::captures)
+		gc.half_move_clock = 0;
+
+	if constexpr (VColor == color::black)
+		gc.fullmoves++;
 
 	gc.turn = invert_color(gc.turn);
-	move_list.push_back(std::make_pair(m, gc));
 	b.do_move<VColor>(m);
 }
 
@@ -315,18 +358,17 @@ void game::undo_move()
 }
 
 template<color VColor>
-game::castle_info game::can_castle() const
+std::pair<bool,bool> game::can_castle() const
 {
+	constexpr color opp = invert_color(VColor);
 	auto& ginfo = gc.get_game_info(VColor);
-	bitboard attacks = gen_attack_bb_except_en_passant<invert_color(VColor)>();
+	bitboard attacks = gen_attack_bb_except_en_passant<opp>();
+	attacks |= gen::attack_pawns_castle<opp>(b.get_board(piece_type::pawn,opp)); // This always adds the attacked fields from pawns.  
 	bool can_castle_kingside = gen::can_castle_kingside<VColor>(b, attacks)
 		&& !ginfo.has_moved_king && !ginfo.has_moved_kingside_rook;
 	bool can_castle_queenside = gen::can_castle_queenside<VColor>(b, attacks)
 		&& !ginfo.has_moved_king && !ginfo.has_moved_queenside_rook;
-	castle_info ci;
-	ci.kingside = can_castle_kingside;
-	ci.queenside = can_castle_queenside;
-	return ci;
+	return std::make_pair(can_castle_kingside,can_castle_queenside);
 }
 
 game::game() : b(), gc()
@@ -394,22 +436,5 @@ template void game::do_move<color::black>(const move& m);
 template void game::undo_move<color::white>();
 template void game::undo_move<color::black>();
 
-template game::castle_info game::can_castle<color::white>() const;
-template game::castle_info game::can_castle<color::black>() const;
-
-//// init game in start formation
-//game::game()
-//	: b(), start_info_white({ false,false,false }), start_info_black({ false,false,false }),
-//	    start_color(color::white), start_en_passantable_pawn(0) {}
-//
-//// init game in a specific formation + context
-//game::game(board b, game_context context)
-///*: b(start_board), start_info_white(start_info_white), start_info_black(start_info_black),
-//	start_color(start_color), start_en_passantable_pawn(start_en_passantable_pawn) {}*/
-//{
-//	// TODO: add proper initialization here ...
-//}
-//
-//
-
-
+template std::pair<bool,bool> game::can_castle<color::white>() const;
+template std::pair<bool, bool> game::can_castle<color::black>() const;

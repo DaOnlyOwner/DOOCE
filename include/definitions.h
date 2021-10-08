@@ -85,8 +85,41 @@ enum class square : uint
 
 constexpr inline uint sq_to_int(square s) { return static_cast<uint>(s); }
 constexpr inline square idx_to_sq(uint idx) { return static_cast<square>(idx); }
+inline std::string sq_to_str(square sq)
+{
+	uint s = sq_to_int(sq);
+	int y = s >> 3;
+	int x = 7 - (s & 7);
+	std::string out;
+	out += ('a' + x);
+	out += ('1' + y);
+	return out;
+}
 
-struct game_info
+inline std::string sq_idx_to_str(uint idx)
+{
+	int y = idx >> 3;
+	int x = 7 - (idx & 7);
+	std::string out;
+	out += ('a' + x);
+	out += ('1' + y);
+	return out;
+}
+
+inline uint str_to_sq_idx(const std::string& sq)
+{
+	int x = 'h' - sq[0];
+	int y = '8' - sq[1];
+	return y * 8 + x;
+}
+
+inline square str_to_sq(const std::string& sq)
+{
+	return idx_to_sq(str_to_sq_idx(sq));
+}
+
+
+struct castling_info
 {
 	bool has_moved_king;
 	bool has_moved_queenside_rook;
@@ -95,13 +128,15 @@ struct game_info
 
 struct game_context
 {
-	game_info side[2] = { {false,false,false},{false,false,false} };
+	castling_info side[2] = { {false,false,false},{false,false,false} };
 	bitboard en_passantable_pawn = 0ULL;
 	color turn = color::white;
-	game_info& get_game_info(color c) { return side[static_cast<uint>(c)]; }
-	const game_info& get_game_info(color c) const { return side[static_cast<uint>(c)]; }
+	castling_info& get_game_info(color c) { return side[static_cast<uint>(c)]; }
+	uint fullmoves = 1;
+	uint half_move_clock = 0;
+	const castling_info& get_game_info(color c) const { return side[static_cast<uint>(c)]; }
 
-	void set_game_info(color c, const game_info& info) { side[static_cast<uint>(c)] = info; }
+	void set_game_info(color c, const castling_info& info) { side[static_cast<uint>(c)] = info; }
 };
 
 struct hq_mask

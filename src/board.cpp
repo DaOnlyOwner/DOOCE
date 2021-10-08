@@ -96,7 +96,8 @@ std::string board::pretty() const
 		for (int x = 0; x < 8; x++)
 		{
 			char c = board_repr[ops::to_idx(x,y)];
-			out += " " + c;
+			out += ' ';
+			out += c;
 		}
 		out+="\n";
 	}

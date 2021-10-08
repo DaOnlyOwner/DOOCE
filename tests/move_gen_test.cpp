@@ -25,7 +25,7 @@ namespace
         for (const move& m : moves)
         {
             g.do_move<VColor>(m);
-            auto fen = fen::board_to_fen(g.get_board());
+            auto fen = fen::game_to_fen(g);
             fen_strings.push_back(fen);
             fen2move[fen] = m;
             g.undo_move<VColor>();
@@ -37,9 +37,15 @@ namespace
         {
             const auto& m = fen2move[fen];
             g.do_move<VColor>(m);
+            //if (fen::board_to_fen(g.get_board()) == "1rbqkbnr/pppppppp/2n5/1P6/8/8/P1PPPPPP/RNBQKBNR")
+            //{
+            //    printf("JETZT");
+            //    auto& gc = g.get_game_context();
+            //    printf("%s", gc.turn == color::white ? "white" : "black");
+            //}
             for (int i = 0; i < indent * 2; i++) { printf(" "); }
             printf("%s\n", fen.c_str());
-
+            
             constexpr color opp_color = invert_color(VColor);
             check_branches_inner<opp_color>(g, depth - 1, indent + 1);
             g.undo_move<VColor>();
@@ -56,9 +62,9 @@ namespace
 
 	void assert_perft_result(perft_results res, perft_results exp)
 	{
+		REQUIRE(res.en_passants == exp.en_passants);
 		REQUIRE(res.captures == exp.captures);
 		REQUIRE(res.nodes == exp.nodes);
-		REQUIRE(res.en_passants == exp.en_passants);
 		REQUIRE(res.castles == exp.castles);
 		REQUIRE(res.promos == exp.promos);
 	}
@@ -89,58 +95,40 @@ TEST_CASE("INIT")
 
 TEST_CASE("Debug")
 {
-    check_branches("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 5);
+    check_branches("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4);
+    //check_branches("r3k2N/p1p1q1b1/bn1ppnp1/3P4/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQq - 0 2", 1);
 }
 
-#if 0 
-#if 0 
-game_info ginfo{true, true, true};
-
-namespace
+#if 0
+// Positions from chessprogramming.org
+TEST_CASE("Perft Position 2")
 {
+    // Position from chessprogramming.org
+    std::string fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1";
+    auto g = fen::fen_to_game(fen);
 
-	// void print_results(perft_results res)
-	// {
-	// 	printf("Total: %i\n", res.nodes);
-	// }
+    SECTION("depth = 1")
+    {
+        validate_position(g, 1, perft_results{ 48, 8, 0, 2, 0 });
+    }
 
+    SECTION("depth = 2")
+    {
+        validate_position(g, 2, perft_results{ 2039, 351, 1, 91, 0 });
+    }
 
+    SECTION("depth = 3")
+    {
+        //check_branches(fen, 3);
+        validate_position(g, 3, perft_results{ 97862, 17102, 45, 3162, 0 });
+    }
 
+    SECTION("depth = 4")
+    {
+        validate_position(g, 4, perft_results{ 4085603, 757163, 1929, 128013, 15172 });
+    }
 }
-
-TEST_CASE("INIT")
-{
-	game::init_all();
-}
-
-//// Positions from chessprogramming.org
-//TEST_CASE("Perft Position 2")
-//{
-//	// Position from chessprogramming.org
-//	std::string fen = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ";
-//	game g(fen);
-//
-//	// SECTION("depth = 1")
-//	// {
-//	// 	validate_position(g, 1, perft_results{ 48, 8, 0, 2, 0 });
-//	// }
-//
-//	// SECTION("depth = 2")
-//	// {
-//	// 	validate_position(g, 2, perft_results{ 2039, 351, 1, 91, 0 });
-//	// }
-//
-//	 SECTION("depth = 3")
-//	 {
-//		check_branches(fen, 3);
-//	 	// validate_position(g, 3, perft_results{ 97862, 17102, 45, 3162, 0 });
-//	 }
-//
-//	//  SECTION("depth = 4")
-//	//  {
-//	//  	validate_position(g, 4, perft_results{ 4085603, 757163, 1929, 128013, 15172 });
-//	//  }
-//}
+#if 0 
 
 // TEST_CASE("Perft Position 3")
 // {
@@ -197,7 +185,7 @@ TEST_CASE("INIT")
 #endif
 
 
-game_context gc{ {{true,true,true},{true,true,true}}, 0ULL,color::white };
+game_context gc{ {{true,true,true},{true,true,true}}, 0ULL,color::white,0,1 };
 TEST_CASE("Move generation king")
 {
     SECTION("King 1")
