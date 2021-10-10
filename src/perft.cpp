@@ -1,8 +1,16 @@
 #include "perft.h"
 
-
 namespace
 {
+	void update_perft_results(const perft_results& res, perft_results& to_update)
+	{
+		to_update.captures += res.captures;
+		to_update.castles += res.castles;
+		to_update.en_passants += res.en_passants;
+		to_update.promos += res.promos;
+		to_update.nodes += res.nodes;
+	}
+
 	template<color VColor>
 	perft_results perft_inner(game& g, int depth, const move& m)
 	{
@@ -50,14 +58,6 @@ namespace
 			g.undo_move<VColor>();
 		}
 		return res;
-	}
-	void update_perft_results(const perft_results& res, perft_results& to_update)
-	{
-		to_update.captures += res.captures;
-		to_update.castles += res.castles;
-		to_update.en_passants += res.en_passants;
-		to_update.promos += res.promos;
-		to_update.nodes += res.nodes;
 	}
 }
 
