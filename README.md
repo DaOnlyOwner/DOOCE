@@ -1,5 +1,4 @@
-
-# DOOCE
+[![Docker CI](https://github.com/DaOnlyOwner/DOOCE/actions/workflows/CI.yml/badge.svg)](https://github.com/DaOnlyOwner/DOOCE/actions/workflows/CI.yml)
 
 This project provides very efficient chess draw-gen functionality.
 
@@ -27,4 +26,7 @@ docker build . -t "dooce-test"
 
 ## Manual Build
 
-Use the commands from the Dockerfile.
+mkdir build
+cd build
+cmake . ..
+cmake --build .
