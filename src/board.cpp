@@ -1,6 +1,7 @@
 #include "board.h"
 #include <map>
 #include <stdexcept>
+#include <algorithm>
 
 void fill_board(std::string& out, bitboard b, piece_type pt, color c)
 {
