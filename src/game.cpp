@@ -265,7 +265,7 @@ std::vector<move> game::legal_moves()
 	out.reserve(250);
 
 	// Pawn attacks
-	printf("%s\n",b.pretty().c_str());
+	//printf("%s\n",b.pretty().c_str());
 	gen_attack_moves_from_pawns<VColor>(out);
 
 	// Pieces
@@ -295,7 +295,6 @@ void game::push_promo_moves(std::vector<move>& out, move& m)
 	m.set_promo_piece_type(piece_type::knight);
 	bool legal = add_when_legal<VColor>(out, m);
 	if (!legal) return;
-	out.push_back(m);
 	m.set_promo_piece_type(piece_type::queen);
 	out.push_back(m);
 	m.set_promo_piece_type(piece_type::rook);
@@ -382,7 +381,9 @@ game::game(const board& b, const game_context& gc) : b(b),gc(gc)
 }
 
 game::game(const std::string& board_repr, const game_context& gc) : b(board_repr), gc(gc)
-{}
+{
+	move_list.reserve(9000);
+}
 
 
 const game_context& game::get_game_context() const

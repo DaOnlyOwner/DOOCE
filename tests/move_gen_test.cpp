@@ -86,6 +86,7 @@ namespace
 		printf("measured time in seconds: %f\n", std::chrono::duration_cast<std::chrono::milliseconds>(then - now).count() / 1000.f);
 		printf("===============================\n\n");
 	}
+
 }
 
 TEST_CASE("INIT")
@@ -95,11 +96,12 @@ TEST_CASE("INIT")
 
 TEST_CASE("Debug")
 {
-    check_branches("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4);
+    //check_branches("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4);
     //check_branches("r3k2N/p1p1q1b1/bn1ppnp1/3P4/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQq - 0 2", 1);
+    //check_branches("r3k2r/p1p1qpb1/bN2pnp1/3P4/1p2P3/2N2Q2/PPPBBPpP/R3K2R b KQkq - 0 2", 1);
 }
 
-#if 0
+#if 1
 // Positions from chessprogramming.org
 TEST_CASE("Perft Position 2")
 {
@@ -127,62 +129,83 @@ TEST_CASE("Perft Position 2")
     {
         validate_position(g, 4, perft_results{ 4085603, 757163, 1929, 128013, 15172 });
     }
+
+    SECTION("depth = 5")
+    {
+        validate_position(g, 5, perft_results{ 193690690 , 35043416 , 73365 ,4993637 ,8392 });
+    }
+
 }
-#if 0 
 
-// TEST_CASE("Perft Position 3")
-// {
-// 	game g("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
-// 	SECTION("depth = 1")
-// 	{
-// 		validate_position(g, 1, perft_results{ 14,1,0,0,0 });
-// 	}
+ TEST_CASE("Perft Position 3")
+ {
+    game g = fen::fen_to_game("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1");
+ 	SECTION("depth = 1")
+ 	{
+ 		validate_position(g, 1, perft_results{ 14,1,0,0,0 });
+ 	}
 
-// 	SECTION("depth = 2")
-// 	{
-// 		validate_position(g, 2, perft_results{ 191,14,0,0,0 });
-// 	}
+ 	SECTION("depth = 2")
+ 	{
+ 		validate_position(g, 2, perft_results{ 191,14,0,0,0 });
+ 	}
 
-// 	SECTION("depth = 3")
-// 	{
-// 		validate_position(g, 3, perft_results{ 2812,209,2,0,0 });
-// 	}
+ 	SECTION("depth = 3")
+ 	{
+ 		validate_position(g, 3, perft_results{ 2812,209,2,0,0 });
+ 	}
 
-// }
+    SECTION("depth = 6")
+    {
+        validate_position(g, 6, perft_results{ 11030083 ,940350 ,33325 ,0 ,7552 });
+    }
 
-// TEST_CASE("Perft Position 4")
-// {
-// 	game g("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
-// 	SECTION("depth = 1")
-// 	{
-// 		validate_position(g, 1, perft_results{ 6,0,0,0,0 });
-// 	}
+ }
 
-// 	SECTION("depth = 2")
-// 	{
-// 		validate_position(g, 2, perft_results{ 264,87,0,6,48 });
-// 	}
-// }
+ TEST_CASE("Perft Position 4")
+ {
+    game g = fen::fen_to_game("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
+ 	SECTION("depth = 1")
+ 	{
+ 		validate_position(g, 1, perft_results{ 6,0,0,0,0 });
+ 	}
 
-// TEST_CASE("Perft Position 6")
-// {
-// 	game g("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10");
-// 	SECTION("depth = 1")
-// 	{
-// 		auto res = g.perft(1);
-// 		REQUIRE(res.nodes == 46);
-// 	}
+ 	SECTION("depth = 2")
+ 	{
+ 		validate_position(g, 2, perft_results{ 264,87,0,6,48 });
+ 	}
 
-// 	SECTION("depth = 2")
-// 	{
-// 		auto res = g.perft(2);
-// 		REQUIRE(res.nodes == 2079);
-// 	}
-// }
+    SECTION("depth = 5")
+    {
+        validate_position(g, 5, perft_results{ 15833292 , 2046173 , 6512 ,0,329464 });
+    }
+ }
 
+ TEST_CASE("Perft Position 5")
+ {
+     SECTION("depth = 3")
+     {
+         auto g = fen::fen_to_game("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ");
+         auto res = perft(g, 3);
+         REQUIRE(res.nodes == 62379);
+     }
+ }
 
+ TEST_CASE("Perft Position 6")
+ {
+    game g = fen::fen_to_game("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10");
+ 	SECTION("depth = 1")
+ 	{
+ 		auto res = perft(g,1);
+ 		REQUIRE(res.nodes == 46);
+ 	}
 
-#endif
+ 	SECTION("depth = 4")
+ 	{
+ 		auto res = perft(g,4);
+ 		REQUIRE(res.nodes == 3894594);
+ 	}
+ }
 
 
 game_context gc{ {{true,true,true},{true,true,true}}, 0ULL,color::white,0,1 };
@@ -591,7 +614,6 @@ TEST_CASE("Initial Perft", "[move_gen]")
 		validate_position(g, 5, perft_results{ 4865609, 82719, 258, 0, 0 });
 	}
 
-    // TODO: this test takes 10 seconds, think of adding it again if test time doesn't matter too much
 	SECTION("depth = 6") {
 		validate_position(g, 6, perft_results{ 119060324ULL, 2812008ULL, 5248ULL, 0, 0 });
 	}
@@ -599,8 +621,7 @@ TEST_CASE("Initial Perft", "[move_gen]")
 
  TEST_CASE("Benchmark")
  {
- 	benchmark_perft(5);
- 	// TODO: this test takes 10 seconds, think of adding it again if test time doesn't matter too much
- 	//benchmark_perft(6);
+     // This takes exactly 11 sec with Hyperbola Quintessence
+ 	benchmark_perft(6);
  }
 #endif
