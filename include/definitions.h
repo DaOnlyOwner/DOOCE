@@ -5,6 +5,7 @@
 
 typedef std::bitset<64> bitboard_constr;
 typedef uint64_t bitboard;
+typedef uint64_t u64;
 typedef unsigned int uint;
 
 static_assert(sizeof(unsigned long long) == sizeof(uint64_t), "unsigned long long needs to be 64 bit");
@@ -131,10 +132,10 @@ struct game_context
 	castling_info side[2] = { {false,false,false},{false,false,false} };
 	bitboard en_passantable_pawn = 0ULL;
 	color turn = color::white;
-	castling_info& get_game_info(color c) { return side[static_cast<uint>(c)]; }
+	castling_info& get_castling_info(color c) { return side[static_cast<uint>(c)]; }
 	uint fullmoves = 1;
 	uint half_move_clock = 0;
-	const castling_info& get_game_info(color c) const { return side[static_cast<uint>(c)]; }
+	const castling_info& get_castling_info(color c) const { return side[static_cast<uint>(c)]; }
 
 	void set_game_info(color c, const castling_info& info) { side[static_cast<uint>(c)] = info; }
 };

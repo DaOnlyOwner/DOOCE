@@ -24,5 +24,4 @@ set_target_properties(dooce
         CXX_EXTENSIONS NO
 )
 
-enable_testing()
 add_subdirectory(tests)

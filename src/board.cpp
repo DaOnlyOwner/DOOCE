@@ -179,8 +179,8 @@ inline void board::do_move(const move& m)
 {
 	constexpr color ecolor = invert_color(VColor);
 	bitboard& own = get_board(m.get_moved_piece_type(), VColor);
-	bitboard from = m.get_from();
-	bitboard to = m.get_to();
+	bitboard from = m.get_from_as_bitboard();
+	bitboard to = m.get_to_as_bitboard();
 
 	switch (m.get_move_type())
 	{
@@ -267,8 +267,8 @@ inline void board::undo_move(const move& m)
 {
 	constexpr color ecolor = static_cast<color>(1 - static_cast<uint>(VColor));
 	bitboard& own = get_board(m.get_moved_piece_type(), VColor);
-	bitboard from = m.get_from();
-	bitboard to = m.get_to();
+	bitboard from = m.get_from_as_bitboard();
+	bitboard to = m.get_to_as_bitboard();
 
 	switch (m.get_move_type())
 	{

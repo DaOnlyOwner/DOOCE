@@ -49,8 +49,8 @@ void gen::init_hq_masks()
 			// Init diag and anti diag.
 			auto diag = ops::get_diag(x, y);
 			auto antidiag = ops::get_antidiag(x, y);
-			auto rank = ops::get_rank(x, y);
-			auto file = ops::get_file(x, y);
+			auto rank = ops::get_rank_mask(x, y);
+			auto file = ops::get_file_mask(x, y);
 			mask.diagEx = diag.to_ullong();
 			mask.antidiagEx = antidiag.to_ullong();
 			mask.fileEx = file.to_ullong();

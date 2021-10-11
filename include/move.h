@@ -61,12 +61,12 @@ struct move
 		this->mtype = mtype;
 	}
 
-	bitboard get_from() const
+	bitboard get_from_as_bitboard() const
 	{
 		return ops::set_nth_bit(from);
 	}
 
-	bitboard get_to() const
+	bitboard get_to_as_bitboard() const
 	{
 		return ops::set_nth_bit(to);
 	}

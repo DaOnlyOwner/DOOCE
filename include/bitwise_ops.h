@@ -70,22 +70,9 @@ namespace ops
 		return (b << 9) & notHFile;
 	}
 
-	inline square to_sq(uint x, uint y)
-	{
-		return static_cast<square>(y * 8 + x);
-	}
-
 	inline uint to_idx(uint x, uint y)
 	{
 		return y * 8 + x;
-	}
-
-	inline std::pair<uint, uint> from_sq(square sq)
-	{
-		uint s = sq_to_int(sq);
-		int y = s  >> 3;
-		int x = s & 7;
-		return std::make_pair(x, y);
 	}
 
 	inline bool is_square_set(bitboard b, square sq)
@@ -110,6 +97,16 @@ namespace ops
 		int y = s >> 3;
 		int x = s & 7;
 		return std::make_pair(x, y);
+	}
+
+	inline uint get_rank(uint idx)
+	{
+		return idx & 7;
+	}
+
+	inline uint get_file(uint idx)
+	{
+		return idx >> 3;
 	}
 
 // Get the index of the least significant set bit.
@@ -160,7 +157,7 @@ namespace ops
 		 b &= (b - 1);
 	}
 
-	inline bitboard_constr get_diag(uint x, uint y)
+	inline bitboard_constr get_antidiag(uint x, uint y)
 	{
 		// info: this is init, so don't care about performance
 		bitboard_constr bc(0);
@@ -176,7 +173,7 @@ namespace ops
 		return bc;
 	}
 
-	inline bitboard_constr get_antidiag(uint x, uint y)
+	inline bitboard_constr get_diag(uint x, uint y)
 	{
 		// info: this is init, so don't care about performance
 		bitboard_constr bc(0);
@@ -192,16 +189,16 @@ namespace ops
 		return bc;
 	}
 
-	inline bitboard_constr get_file(uint x, uint y)
+	inline bitboard_constr get_file_mask(uint x, uint y)
 	{
-		return 0x0101010101010101ull << x; // TODO: check if this works
+		return 0x0101010101010101ull << x; 
 
 		/*bitboard_constr a_file(0x0101010101010101);
 		uint idx = ops::to_idx(x, y);
 		return (a_file << (idx & 7)) ^ (bitboard_constr(1) << idx);*/
 	}
 
-	inline bitboard_constr get_rank(uint x, uint y)
+	inline bitboard_constr get_rank_mask(uint x, uint y)
 	{
 		return 0xffull << y * 8; // TODO: check if this works
 
