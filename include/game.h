@@ -45,6 +45,8 @@ private:
 	// Retrieving the game_context from the stack is much simpler.
 	std::vector<std::pair<move,game_context>> move_list;
 
+	static bool has_static_variables_init;
+
 	template<color VColor>
 	void gen_attack_moves_from_piece(std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
 

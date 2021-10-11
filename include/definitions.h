@@ -14,31 +14,18 @@ enum class piece_type : uint
 	pawn=0, rook=1, bishop=2, knight=3, king=4, queen=5
 };
 
-struct attack_info
+enum class move_type : uint
 {
-	bitboard attacks;
-	piece_type ptype;
-	unsigned int from;
+	quiet = 0,
+	pawn_single = 1,
+	pawn_double = 2,
+	king_castle = 3,
+	queen_castle = 4,
+	captures = 5,
+	en_passant = 6,
+	promo = 7,
+	promo_captures = 8
 };
-
-struct attack_list
-{
-	std::array<attack_info, 64> ainfo;
-	int size;
-
-	void add(const attack_info& ai)
-	{
-		ainfo[size++] = ai;
-	}
-
-	void clear()
-	{
-		size = 0;
-	}
-
-};
-
-
 
 enum class color : uint
 {
@@ -131,10 +118,10 @@ struct game_context
 	castling_info side[2] = { {false,false,false},{false,false,false} };
 	bitboard en_passantable_pawn = 0ULL;
 	color turn = color::white;
-	castling_info& get_game_info(color c) { return side[static_cast<uint>(c)]; }
+	castling_info& get_castling_info(color c) { return side[static_cast<uint>(c)]; }
 	uint fullmoves = 1;
 	uint half_move_clock = 0;
-	const castling_info& get_game_info(color c) const { return side[static_cast<uint>(c)]; }
+	const castling_info& get_castling_info(color c) const { return side[static_cast<uint>(c)]; }
 
 	void set_game_info(color c, const castling_info& info) { side[static_cast<uint>(c)] = info; }
 };

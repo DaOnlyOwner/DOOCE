@@ -3,19 +3,6 @@
 #include "bitwise_ops.h"
 #include <optional>
 
-enum class move_type : uint
-{
-	quiet=0,
-	pawn_single=1,
-	pawn_double=2,
-	king_castle=3,
-	queen_castle=4,
-	captures=5,
-	en_passant=6,
-	promo=7,
-	promo_captures=8
-};
-
 struct move
 {
 	uint from, to;
@@ -61,12 +48,12 @@ struct move
 		this->mtype = mtype;
 	}
 
-	bitboard get_from() const
+	bitboard get_from_as_bitboard() const
 	{
 		return ops::set_nth_bit(from);
 	}
 
-	bitboard get_to() const
+	bitboard get_to_as_bitboard() const
 	{
 		return ops::set_nth_bit(to);
 	}

@@ -67,31 +67,3 @@ perft_results perft(game& g, int depth)
 		return perft_inner<color::white>(g, depth, move{});
 	else return perft_inner<color::black>(g, depth, move{});
 }
-
-
-// TODO: move perft into tests section, don't ship this with the chess library
-
-//perft_results game::perft(int depth)
-//{
-//	board_info binfo;
-//	attack_pattern pattern;
-//	int size; move m{};
-//
-//	if (start_color == color::white)
-//		game::extract_board<color::white>(binfo);
-//	else
-//		game::extract_board<color::black>(binfo);
-//
-//	if (start_color == color::white)
-//		game::gen_all_attack_pattern_except_en_passant<color::white>(pattern, size, binfo);
-//	else
-//		game::gen_all_attack_pattern_except_en_passant<color::black>(pattern, size, binfo);
-//
-//	if (start_color == color::white)
-//		return perft_inner<color::white>(depth, start_info_white, start_info_black,
-//			start_en_passantable_pawn, pattern, size, binfo, m);
-//	else
-//		return perft_inner<color::black>(depth, start_info_black, start_info_white,
-//			start_en_passantable_pawn, pattern, size, binfo, m);
-//}
-//

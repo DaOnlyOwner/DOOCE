@@ -23,6 +23,7 @@ namespace
 			}
 			else
 			{
+				// TODO: Check for invalid characters.
 				out.push_back(c);
 			}
 		}
@@ -96,8 +97,8 @@ std::string fen::game_to_fen(const game& g)
 	std::string fullmove;
 	std::string half_move_clock;
 	auto& gc = g.get_game_context();
-	auto& info_white = gc.get_game_info(color::white);
-	auto& info_black = gc.get_game_info(color::black);
+	auto& info_white = gc.get_castling_info(color::white);
+	auto& info_black = gc.get_castling_info(color::black);
 
 	if (!info_white.has_moved_king && !info_white.has_moved_kingside_rook) castle_fen.push_back('K');
 	if (!info_white.has_moved_king && !info_white.has_moved_queenside_rook) castle_fen.push_back('Q');

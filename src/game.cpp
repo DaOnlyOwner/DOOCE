@@ -1,6 +1,8 @@
 #include "game.h"
 #include "attack_bitboards.h"
 
+bool game::has_static_variables_init = false;
+
 template<color VColor>
 void game::gen_attack_moves_from_piece(std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint))
 {
@@ -60,7 +62,6 @@ void game::gen_attack_moves_from_pawns_inner(move& m, bitboard attack, std::vect
 	m.set_to(ops::num_trailing_zeros(attack));
 	auto captured = determine_capturing(VColor, attack);
 	bool promo = determine_promo<VColor>(attack);
-	move_type mtype;
 
 	m.set_captured_piece_type(captured);
 	if (captured.has_value() && promo)
@@ -239,7 +240,7 @@ template<color VColor>
 void game::gen_move_castling(std::vector<move>& out)
 {
 	constexpr color ecolor = invert_color(VColor);
-	castling_info ginfo = gc.get_game_info(VColor);
+	castling_info ginfo = gc.get_castling_info(VColor);
 	auto [can_castle_kingside, can_castle_queenside] = can_castle<VColor>();
 	move_type mtype;
 	piece_type moved = piece_type::king;
@@ -313,7 +314,7 @@ void game::do_move(const move& m)
 	constexpr square rook_queenside_opp = VColor == color::white ? square::a8 : square::a1;
 	constexpr square rook_kingside_opp = VColor == color::white ? square::h8 : square::h1;
 
-	castling_info& gi = gc.get_game_info(VColor);
+	castling_info& gi = gc.get_castling_info(VColor);
 	gi.has_moved_king = (m.get_moved_piece_type() == piece_type::king || gi.has_moved_king);
 	// Here and next stmt not accounting for castling, but that doesn't matter because then has_moved_king is set to true.
 	gi.has_moved_kingside_rook = ((m.get_moved_piece_type() == piece_type::rook
@@ -323,7 +324,7 @@ void game::do_move(const move& m)
 
 	if (m.get_move_type() == move_type::captures || m.get_move_type() == move_type::promo_captures)
 	{
-		castling_info& gi_opp = gc.get_game_info(invert_color(VColor));
+		castling_info& gi_opp = gc.get_castling_info(invert_color(VColor));
 		// The rook has been captured without it moving -> set the flag to false
 		gi_opp.has_moved_kingside_rook = (m.get_captured_piece_type() == piece_type::rook
 			&& idx_to_sq(m.get_to_as_idx()) == rook_kingside_opp) || gi_opp.has_moved_kingside_rook; 
@@ -334,7 +335,7 @@ void game::do_move(const move& m)
 	gc.half_move_clock++;
 	if (m.get_move_type() == move_type::pawn_double)
 	{
-		gc.en_passantable_pawn = m.get_to();
+		gc.en_passantable_pawn = m.get_to_as_bitboard();
 	}
 	else gc.en_passantable_pawn = 0ULL;
 	if (m.get_moved_piece_type() == piece_type::pawn || m.get_move_type() == move_type::captures)
@@ -360,7 +361,7 @@ template<color VColor>
 std::pair<bool,bool> game::can_castle() const
 {
 	constexpr color opp = invert_color(VColor);
-	auto& ginfo = gc.get_game_info(VColor);
+	auto& ginfo = gc.get_castling_info(VColor);
 	bitboard attacks = gen_attack_bb_except_en_passant<opp>();
 	attacks |= gen::attack_pawns_castle<opp>(b.get_board(piece_type::pawn,opp)); // This always adds the attacked fields from pawns.  
 	bool can_castle_kingside = gen::can_castle_kingside<VColor>(b, attacks)
@@ -372,16 +373,31 @@ std::pair<bool,bool> game::can_castle() const
 
 game::game() : b(), gc()
 {
+	if (!has_static_variables_init)
+	{
+		gen::init_all();
+		has_static_variables_init = true;
+	}
 	move_list.reserve(9000);
 }
 
 game::game(const board& b, const game_context& gc) : b(b),gc(gc)
 {
+	if (!has_static_variables_init)
+	{
+		gen::init_all();
+		has_static_variables_init = true;
+	}
 	move_list.reserve(9000);
 }
 
 game::game(const std::string& board_repr, const game_context& gc) : b(board_repr), gc(gc)
 {
+	if (!has_static_variables_init)
+	{
+		gen::init_all();
+		has_static_variables_init = true;
+	}
 	move_list.reserve(9000);
 }
 
