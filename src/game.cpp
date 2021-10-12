@@ -310,7 +310,7 @@ template<color VColor>
 void game::do_move(const move& m)
 {
 
-	move_list.push_back(move_list_elements(m,gc,zh,is_threefold_rep));
+	move_list.emplace_back(m,gc,zh,is_threefold_rep);
 	constexpr square rook_queenside = VColor == color::white ? square::a1 : square::a8;
 	constexpr square rook_kingside = VColor == color::white ? square::h1 : square::h8;
 
@@ -350,7 +350,7 @@ void game::do_move(const move& m)
 	gc.turn = invert_color(gc.turn);
 	b.do_move<VColor>(m);
 	zh.do_undo_move<VColor>(m);
-	is_threefold_rep = is_last_move_threefold_repetition();
+	is_threefold_rep = is_last_move_threefold_repetition() || is_threefold_rep;
 }
 
 template<color VColor>
