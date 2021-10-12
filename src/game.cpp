@@ -309,7 +309,8 @@ void game::push_promo_moves(std::vector<move>& out, move& m)
 template<color VColor>
 void game::do_move(const move& m)
 {
-	move_list.push_back(std::make_pair(m, gc));
+
+	move_list.push_back(move_list_elements(m,gc,zh,is_threefold_rep));
 	constexpr square rook_queenside = VColor == color::white ? square::a1 : square::a8;
 	constexpr square rook_kingside = VColor == color::white ? square::h1 : square::h8;
 
@@ -348,14 +349,19 @@ void game::do_move(const move& m)
 
 	gc.turn = invert_color(gc.turn);
 	b.do_move<VColor>(m);
+	zh.do_undo_move<VColor>(m);
+	is_threefold_rep = is_last_move_threefold_repetition();
 }
 
 template<color VColor>
 void game::undo_move()
 {
-	auto& [m,old_gc] = move_list.back();
+	auto& [m,old_gc,zh_,is_threefold] = move_list.back();
+	//auto& [m, old_gc] = move_list.back();
 	move_list.pop_back();
 	gc = old_gc; 
+	zh = zh_;
+	is_threefold_rep = is_threefold;
 	b.undo_move<VColor>(m);
 }
 
@@ -373,19 +379,41 @@ std::pair<bool,bool> game::can_castle() const
 	return std::make_pair(can_castle_kingside,can_castle_queenside);
 }
 
-game::game() : b(), gc()
+bool game::is_last_move_threefold_repetition() const
+{
+
+	const auto& to_check = move_list[move_list.size() - 1];
+	if (to_check.m.get_moved_piece_type() == piece_type::pawn
+		|| to_check.m.get_move_type() == move_type::captures)
+		return false;
+	int count = 0;
+	for (int j = move_list.size()-2; j >= 0; j--)
+	{
+		const auto& compare = move_list[j];
+		if (compare.zh.get_hash() == compare.zh.get_hash())
+			count++;
+		if (count == 3)
+			return true;
+		if (compare.m.get_moved_piece_type() == piece_type::pawn
+			|| compare.m.get_move_type() == move_type::captures)
+			return false;
+	}
+	return false;
+}
+
+game::game() : b(), gc(), zh()
 {
 	if (!init) { gen::init_all(); init = true; }
 	move_list.reserve(9000);
 }
 
-game::game(const board& b, const game_context& gc) : b(b),gc(gc)
+game::game(const board& b, const game_context& gc) : b(b),gc(gc), zh(gc, b)
 {
 	if (!init) { gen::init_all(); init = true; }
 	move_list.reserve(9000);
 }
 
-game::game(const std::string& board_repr, const game_context& gc) : b(board_repr), gc(gc)
+game::game(const std::string& board_repr, const game_context& gc) : b(board_repr), gc(gc), zh(gc, b)
 {
 	if (!init) { gen::init_all(); init = true; }
 	move_list.reserve(9000);
@@ -400,6 +428,11 @@ const game_context& game::get_game_context() const
 const board& game::get_board() const
 {
 	return b;
+}
+
+bool game::is_threefold_repetition() const
+{
+	return is_threefold_rep;
 }
 
 template bitboard game::gen_attack_bb_except_en_passant<color::white>() const;

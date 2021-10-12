@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include "zobrist_hash.h"
 
 class game
 {
@@ -38,14 +39,30 @@ public:
 
 	const board& get_board() const;
 
+	bool is_threefold_repetition() const;
 
 private:
+	struct move_list_elements
+	{
+		move_list_elements(const move& m, const game_context& gc, const zobrist_hash& zh, bool is_threefold)
+			: m(m),gc(gc),zh(zh),is_threefold_rep(is_threefold){}
+		move m;
+		game_context gc;
+		zobrist_hash zh;
+		bool is_threefold_rep;
+	};
+
+
 	game_context gc;
 	board b;
+	zobrist_hash zh;
+	bool is_threefold_rep = false;
 	// Retrieving the game_context from the stack is much simpler.
-	std::vector<std::pair<move,game_context>> move_list;
+	std::vector<move_list_elements> move_list;
 
 	static bool init;
+
+	bool is_last_move_threefold_repetition() const;
 
 	template<color VColor>
 	void gen_attack_moves_from_piece(std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));

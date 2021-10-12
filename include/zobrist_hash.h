@@ -10,7 +10,7 @@ class zobrist_hash
 public:
 	zobrist_hash();
 	zobrist_hash(const game_context& gc, const board& b);
-	u64 get_hash();
+	u64 get_hash() const;
 	template<color c>
 	void do_undo_move(const move& m);
 private:
@@ -20,7 +20,7 @@ private:
 	static void init_castling_rights_hash();
 	static void init_ep_square_hash();
 
-	void handle_quiet_move(piece_type,color,uint,uint);
+	void handle_quiet_move(uint ptype,uint color,uint from,uint to);
 
 	static std::mt19937_64 gen;
 	static std::uniform_int_distribution<u64> distr;

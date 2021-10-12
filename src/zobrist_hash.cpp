@@ -49,35 +49,81 @@ zobrist_hash::zobrist_hash(const game_context& gc, const board& b)
 	}
 }
 
-u64 zobrist_hash::get_hash()
+u64 zobrist_hash::get_hash() const
 {
 	return hash;
 }
 
-void zobrist_hash::handle_quiet_move(piece_type ptype, color c, uint from, uint to)
+void zobrist_hash::handle_quiet_move(uint ptype, uint c, uint from, uint to)
 {
-	hash ^= piece_hash[static_cast<uint>(c)][static_cast<uint>(ptype)][from]
-		^ piece_hash[static_cast<uint>(c)][static_cast<uint>(ptype)][to];
+	hash ^= piece_hash[c][ptype][from]
+		^ piece_hash[c][ptype][to];
 }
 
 template<color c>
 void zobrist_hash::do_undo_move(const move& m)
 {
 	constexpr uint c_idx = static_cast<uint>(c);
+	uint from = m.get_from_as_idx();
+	uint to = m.get_to_as_idx();
+	uint ptype = static_cast<uint>(m.get_moved_piece_type());
 	switch (m.get_move_type())
 	{
 	case move_type::pawn_single:
 	case move_type::pawn_double:
 	case move_type::quiet:
-		handle_quiet_move(m.get_moved_piece_type(),c,m.get_from_as_idx(),m.get_to_as_idx());
-		break;
+	{
+		handle_quiet_move(ptype, c_idx, from, to);
+	}
+	break;
 	case move_type::captures:
-		handle_quiet_move(m.get_moved_piece_type(), c, m.get_from_as_idx(), m.get_to_as_idx());
-		hash ^= piece_hash[c_idx][static_cast<uint>(m.get_captured_piece_type())][m.get_to_as_idx()];
-	
-	// TODO: Finish
-		
+	{
+		handle_quiet_move(ptype, c_idx, from, to);
+		hash ^= piece_hash[1 - c_idx][ptype][to];
+	}
+	break;
+	case move_type::en_passant:
+	{
+		handle_quiet_move(ptype, c_idx, from, to);
+		if constexpr (c == color::white)
+			hash ^= piece_hash[1 - c_idx][ptype][to + 8];
+		else hash ^= piece_hash[1 - c_idx][ptype][to - 8];
+	}
+	break;
 
+	case move_type::promo_captures:
+		// We fall through to case move_type::promo which handles the promotion part.
+	{
+		hash ^= piece_hash[1 - c_idx][ptype][to];
+	}
+	case move_type::promo:
+	{
+
+		hash ^= piece_hash[c_idx][ptype][from];
+		// Now promote to piece -> xor with the hash of the new piece
+		hash ^= piece_hash[c_idx][static_cast<uint>(m.get_promo_piece_type())][to];
+	}
+	break;
+	case move_type::king_castle:
+	{
+		constexpr uint rook_from_square = sq_to_int(c == color::white ? square::h1 : square::h8);
+		constexpr uint rook_to_square = sq_to_int(c == color::white ? square::f1 : square::f8);
+		constexpr uint king_from_square = sq_to_int(c == color::white ? square::e1 : square::e8);
+		constexpr uint king_to_square = sq_to_int(c == color::white ? square::g1 : square::g8);
+		handle_quiet_move(static_cast<uint>(piece_type::rook), c_idx, rook_from_square, rook_to_square);
+		handle_quiet_move(static_cast<uint>(piece_type::king), c_idx, king_from_square, king_to_square);
+	}
+	break;
+	case move_type::queen_castle:
+	{
+		constexpr auto rook_from_square = sq_to_int(c == color::white ? square::a1 : square::a8);
+		constexpr auto rook_to_square = sq_to_int(c == color::white ? square::d1 : square::d8);
+		constexpr auto king_from_square = sq_to_int(c == color::white ? square::e1 : square::e8);
+		constexpr auto king_to_square = sq_to_int(c == color::white ? square::c1 : square::c8);
+		handle_quiet_move(static_cast<uint>(piece_type::rook), c_idx, rook_from_square, rook_to_square);
+		handle_quiet_move(static_cast<uint>(piece_type::king), c_idx, king_from_square, king_to_square);
+	}
+	break;
 	}
 }
 
