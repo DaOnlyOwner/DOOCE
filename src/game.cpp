@@ -317,6 +317,9 @@ void game::do_move(const move& m)
 	constexpr square rook_queenside_opp = VColor == color::white ? square::a8 : square::a1;
 	constexpr square rook_kingside_opp = VColor == color::white ? square::h8 : square::h1;
 
+	auto ci_prev = gc.castling_info_for_sides;
+	uint ep_prev = gc.en_passantable_pawn;
+
 	castling_info& gi = gc.get_castling_info(VColor);
 	gi.has_moved_king = (m.get_moved_piece_type() == piece_type::king || gi.has_moved_king);
 	// Here and next stmt not accounting for castling, but that doesn't matter because then has_moved_king is set to true.
@@ -349,7 +352,7 @@ void game::do_move(const move& m)
 
 	gc.turn = invert_color(gc.turn);
 	b.do_move<VColor>(m);
-	zh.do_undo_move<VColor>(m);
+	zh.do_undo_move<VColor>(ep_prev,ci_prev, gc, m);
 	is_threefold_rep = is_last_move_threefold_repetition() || is_threefold_rep;
 }
 

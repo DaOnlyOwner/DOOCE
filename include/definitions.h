@@ -15,32 +15,6 @@ enum class piece_type : uint
 	pawn=0, rook=1, bishop=2, knight=3, king=4, queen=5
 };
 
-struct attack_info
-{
-	bitboard attacks;
-	piece_type ptype;
-	unsigned int from;
-};
-
-struct attack_list
-{
-	std::array<attack_info, 64> ainfo;
-	int size;
-
-	void add(const attack_info& ai)
-	{
-		ainfo[size++] = ai;
-	}
-
-	void clear()
-	{
-		size = 0;
-	}
-
-};
-
-
-
 enum class color : uint
 {
 	white=0, black=1
@@ -125,19 +99,28 @@ struct castling_info
 	bool has_moved_king;
 	bool has_moved_queenside_rook;
 	bool has_moved_kingside_rook;
+	bool queenside_right() const
+	{
+		return !has_moved_king && !has_moved_queenside_rook;
+	}
+
+	bool kingside_right() const
+	{
+		return !has_moved_king && !has_moved_kingside_rook;
+	}
 };
 
 struct game_context
 {
-	castling_info side[2] = { {false,false,false},{false,false,false} };
+	std::array<castling_info, 2> castling_info_for_sides{};
 	bitboard en_passantable_pawn = 0ULL;
 	color turn = color::white;
-	castling_info& get_castling_info(color c) { return side[static_cast<uint>(c)]; }
+	castling_info& get_castling_info(color c) { return castling_info_for_sides[static_cast<uint>(c)]; }
 	uint fullmoves = 1;
 	uint half_move_clock = 0;
-	const castling_info& get_castling_info(color c) const { return side[static_cast<uint>(c)]; }
+	const castling_info& get_castling_info(color c) const { return castling_info_for_sides[static_cast<uint>(c)]; }
 
-	void set_game_info(color c, const castling_info& info) { side[static_cast<uint>(c)] = info; }
+	void set_game_info(color c, const castling_info& info) { castling_info_for_sides[static_cast<uint>(c)] = info; }
 };
 
 struct hq_mask

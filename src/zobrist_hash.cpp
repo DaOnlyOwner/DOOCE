@@ -45,7 +45,8 @@ zobrist_hash::zobrist_hash(const game_context& gc, const board& b)
 	for (int c = 0; c < 2; c++)
 	{
 		auto& ci = gc.get_castling_info(static_cast<color>(c));
-		hash ^= castling_rights_hash[c][0] ^ castling_rights_hash[c][1];
+		hash ^= ci.kingside_right() ? castling_rights_hash[c][0] : 0ULL;
+		hash ^= ci.queenside_right() ? castling_rights_hash[c][1] : 0ULL;
 	}
 }
 
@@ -61,7 +62,7 @@ void zobrist_hash::handle_quiet_move(uint ptype, uint c, uint from, uint to)
 }
 
 template<color c>
-void zobrist_hash::do_undo_move(const move& m)
+void zobrist_hash::do_undo_move(uint ep_previous,const std::array<castling_info,2> ci_previous, const game_context& gc_after, const move& m)
 {
 	constexpr uint c_idx = static_cast<uint>(c);
 	uint from = m.get_from_as_idx();
@@ -125,10 +126,34 @@ void zobrist_hash::do_undo_move(const move& m)
 	}
 	break;
 	}
+
+	uint ep_idx = ops::get_rank(ops::num_trailing_zeros(ep_previous));
+	hash ^= ep_square_hash[ep_idx]; // Remove the previous hash
+	ep_idx = ops::get_rank(ops::num_trailing_zeros(gc_after.en_passantable_pawn));
+	hash ^= ep_square_hash[ep_idx];
+	auto& ci_after = gc_after.castling_info_for_sides;
+
+	/*for (int c = 0; c < 2; c++)
+	{
+		if (ci_previous[c].kingside_right() != ci_after[c].kingside_right())
+		{
+			hash ^= castling_rights_hash[c][0];
+		}
+
+		if (ci_previous[c].queenside_right() != ci_after[c].queenside_right())
+		{
+			hash ^=	castling_rights_hash[c][1];
+		}
+	}*/
+	hash ^= black_to_move_hash;
 }
 
-template void zobrist_hash::do_undo_move<color::white>(const move& m);
-template void zobrist_hash::do_undo_move<color::black>(const move& m);
+template void zobrist_hash::do_undo_move<color::black>
+(uint ep_prev, const std::array<castling_info, 2> ci_prev, const game_context& after_gc, const move& m);
+template void zobrist_hash::do_undo_move<color::white>
+(uint ep_prev, const std::array<castling_info, 2> ci_prev, const game_context& after_gc, const move& m);
+
+
 
 void zobrist_hash::init_piece_hash()
 {

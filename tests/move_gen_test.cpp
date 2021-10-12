@@ -91,13 +91,14 @@ namespace
 
 TEST_CASE("Debug")
 {
+    benchmark_perft(6);
     //benchmark_perft(5);
     //check_branches("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4);
     //check_branches("r3k2N/p1p1q1b1/bn1ppnp1/3P4/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQq - 0 2", 1);
     //check_branches("r3k2r/p1p1qpb1/bN2pnp1/3P4/1p2P3/2N2Q2/PPPBBPpP/R3K2R b KQkq - 0 2", 1);
 }
 
-#if 1
+#if 0
 // Positions from chessprogramming.org
 TEST_CASE("Perft Position 2")
 {
@@ -203,8 +204,8 @@ TEST_CASE("Perft Position 2")
  	}
  }
 
-
-game_context gc{ {{true,true,true},{true,true,true}}, 0ULL,color::white,0,1 };
+ std::array<castling_info, 2> ci = { true,true,true,true,true,true };
+ game_context gc{ ci, 0ULL,color::white,0,1 };
 TEST_CASE("Move generation king")
 {
     SECTION("King 1")
