@@ -91,14 +91,14 @@ namespace
 
 TEST_CASE("Debug")
 {
-    benchmark_perft(6);
+    //benchmark_perft(6);
     //benchmark_perft(5);
     //check_branches("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4);
     //check_branches("r3k2N/p1p1q1b1/bn1ppnp1/3P4/1p2P3/2N2Q1p/PPPBBPPP/R3K2R b KQq - 0 2", 1);
     //check_branches("r3k2r/p1p1qpb1/bN2pnp1/3P4/1p2P3/2N2Q2/PPPBBPpP/R3K2R b KQkq - 0 2", 1);
 }
 
-#if 0
+#if 1
 // Positions from chessprogramming.org
 TEST_CASE("Perft Position 2")
 {
