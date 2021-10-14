@@ -136,6 +136,22 @@ bitboard board::get_whole_board() const
 	return whole_board;
 }
 
+std::pair<std::optional<piece_type>, color> board::get_occupation_of_idx(uint idx) const
+{
+	bitboard set_bit = ops::set_nth_bit(idx);
+	for (uint c = 0; c < 2; c++)
+	{
+		for (uint p = 0; p < 6; p++)
+		{
+			color c_ = static_cast<color>(c);
+			piece_type p_ = static_cast<piece_type>(p);
+			bitboard bb = get_board(p_, c_);
+			if ((set_bit & bb) > 0) return std::make_pair(p_,c_);
+		}
+	}
+	return std::make_pair(std::nullopt,color::white);
+}
+
 void board::recalculate_boards()
 {
 	black_side = 0ULL;

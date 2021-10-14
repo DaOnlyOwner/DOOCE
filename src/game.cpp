@@ -1,10 +1,24 @@
 #include "game.h"
 #include "attack_bitboards.h"
 
+#define FD_ATTACK_TEMPLATE_FUNCTION(rt, name, ...) \
+template rt game::##name##<color::white,true>( __VA_ARGS__ ); \
+template rt game::##name##<color::black, true>(__VA_ARGS__);\
+template rt game::##name##<color::white, false>(__VA_ARGS__);\
+template rt game::##name##<color::black, false>(__VA_ARGS__)
+
+#define FD_CONST_TEMPLATE_FUNCTION(rt, name, ...) \
+template rt game::##name##<color::white>(  __VA_ARGS__ ) const;\
+template rt game::##name##<color::black>(  __VA_ARGS__ ) const
+
+#define FD_TEMPLATE_FUNCTION(rt, name, ...) \
+template rt game::##name##<color::white>(  __VA_ARGS__ );\
+template rt game::##name##<color::black>(  __VA_ARGS__ ) 
+
 
 bool game::init = false;
 
-template<color VColor>
+template<color VColor, bool VOnlyCaptures>
 void game::gen_attack_moves_from_piece(std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint))
 {
 	uint from = 0;
@@ -26,6 +40,16 @@ void game::gen_attack_moves_from_piece(std::vector<move>& out, bitboard piece_oc
 			m.set_captured_piece_type(captured);
 			move_type mtype = captured.has_value() ? move_type::captures : move_type::quiet;
 			m.set_move_type(mtype);
+
+			// If we only want to generate capturing moves than we test if there is a captured piece and add it when it's legal.
+			// Otherwise we just add the move regardless wether it is a capture or not.
+			if constexpr (VOnlyCaptures)
+			{
+				if (captured.has_value())
+					add_when_legal<VColor>(out, m);
+				ops::pop_lsb(attacks);
+				continue;
+			}
 			add_when_legal<VColor>(out, m);
 			ops::pop_lsb(attacks);
 		}
@@ -261,7 +285,7 @@ void game::gen_move_castling(std::vector<move>& out)
 	}
 }
 
-template<color VColor>
+template<color VColor, bool VOnlyCaptures>
 std::vector<move> game::legal_moves()
 {
 	std::vector<move> out;
@@ -272,11 +296,11 @@ std::vector<move> game::legal_moves()
 	gen_attack_moves_from_pawns<VColor>(out);
 
 	// Pieces
-	gen_attack_moves_from_piece<VColor>(out, b.get_board(piece_type::bishop, VColor), piece_type::bishop, &gen::attacks_bishop);
-	gen_attack_moves_from_piece<VColor>(out, b.get_board(piece_type::rook, VColor), piece_type::rook, &gen::attacks_rook);
-	gen_attack_moves_from_piece<VColor>(out, b.get_board(piece_type::queen, VColor), piece_type::queen, &gen::attacks_queen);
-	gen_attack_moves_from_piece<VColor>(out, b.get_board(piece_type::knight, VColor), piece_type::knight, &gen::attacks_knight);
-	gen_attack_moves_from_piece<VColor>(out, b.get_board(piece_type::king, VColor),piece_type::king, &gen::attacks_king);
+	gen_attack_moves_from_piece<VColor, VOnlyCaptures>(out, b.get_board(piece_type::bishop, VColor), piece_type::bishop, &gen::attacks_bishop);
+	gen_attack_moves_from_piece<VColor, VOnlyCaptures>(out, b.get_board(piece_type::rook, VColor), piece_type::rook, &gen::attacks_rook);
+	gen_attack_moves_from_piece<VColor, VOnlyCaptures>(out, b.get_board(piece_type::queen, VColor), piece_type::queen, &gen::attacks_queen);
+	gen_attack_moves_from_piece<VColor, VOnlyCaptures>(out, b.get_board(piece_type::knight, VColor), piece_type::knight, &gen::attacks_knight);
+	gen_attack_moves_from_piece<VColor, VOnlyCaptures>(out, b.get_board(piece_type::king, VColor),piece_type::king, &gen::attacks_king);
 
 	// en_passant
 	gen_move_en_passant<VColor>(out,
@@ -285,10 +309,12 @@ std::vector<move> game::legal_moves()
 		&gen::en_passant_right<VColor>, &ops::so_we, &ops::no_we);
 
 	// pawn push
-	game::gen_move_pawn_push<VColor>(out);
+	if constexpr(!VOnlyCaptures)
+		game::gen_move_pawn_push<VColor>(out);
 
 	// castling
-	game::gen_move_castling<VColor>(out);
+	if constexpr(!VOnlyCaptures)
+		game::gen_move_castling<VColor>(out);
 	return out;
 }
 
@@ -310,7 +336,7 @@ template<color VColor>
 void game::do_move(const move& m)
 {
 
-	move_list.emplace_back(m,gc,zh,is_threefold_rep);
+	move_list.emplace_back(m,gc,zh);
 	constexpr square rook_queenside = VColor == color::white ? square::a1 : square::a8;
 	constexpr square rook_kingside = VColor == color::white ? square::h1 : square::h8;
 
@@ -353,18 +379,16 @@ void game::do_move(const move& m)
 	gc.turn = invert_color(gc.turn);
 	b.do_move<VColor>(m);
 	zh.do_undo_move<VColor>(ep_prev,ci_prev, gc, m);
-	is_threefold_rep = is_last_move_threefold_repetition() || is_threefold_rep;
 }
 
 template<color VColor>
 void game::undo_move()
 {
-	auto& [m,old_gc,zh_,is_threefold] = move_list.back();
+	auto& [m,old_gc,zh_] = move_list.back();
 	//auto& [m, old_gc] = move_list.back();
 	move_list.pop_back();
 	gc = old_gc; 
 	zh = zh_;
-	is_threefold_rep = is_threefold;
 	b.undo_move<VColor>(m);
 }
 
@@ -384,7 +408,6 @@ std::pair<bool,bool> game::can_castle() const
 
 bool game::is_last_move_threefold_repetition() const
 {
-
 	const auto& to_check = move_list[move_list.size() - 1];
 	if (to_check.m.get_moved_piece_type() == piece_type::pawn
 		|| to_check.m.get_move_type() == move_type::captures)
@@ -402,6 +425,140 @@ bool game::is_last_move_threefold_repetition() const
 			return false;
 	}
 	return false;
+}
+
+uint game::get_ply() const
+{
+	return move_list.size();
+}
+
+template<color VColor>
+void game::gen_piece_attacks_for_idx(uint idx, array_vector<piece_type, 6>& out) const
+{
+	bitboard set_bit = ~ops::set_nth_bit(idx);
+	bitboard b = gen_attack_bb_from_piece(b.get_board(piece_type::bishop, VColor), &gen::attacks_bishop);
+	if (b & set_bit > 0) out.push_back(piece_type::bishop);
+	bitboard r = gen_attack_bb_from_piece(b.get_board(piece_type::rook, VColor), &gen::attacks_rook);
+	if (r & set_bit > 0) out.push_back(piece_type::bishop);
+	bitboard q = gen_attack_bb_from_piece(b.get_board(piece_type::queen, VColor), &gen::attacks_queen);
+	if (q & set_bit > 0) out.push_back(piece_type::queen);
+	bitboard n = gen_attack_bb_from_piece(b.get_board(piece_type::knight, VColor), &gen::attacks_knight);
+	if (n & set_bit > 0) out.push_back(piece_type::knight);
+	bitboard k = gen_attack_bb_from_piece(b.get_board(piece_type::king, VColor), &gen::attacks_king);
+	if (k & set_bit > 0) out.push_back(piece_type::king);
+
+	bitboard p = gen::attack_pawns_left<VColor>(b.get_board(piece_type::pawn, VColor), b);
+	p |= gen::attack_pawns_right<VColor>(b.get_board(piece_type::pawn, VColor), b);
+	if (p & set_bit > 0) out.push_back(piece_type::pawn);
+}
+
+// The dooce algebraic notation:
+/*
+* - Specify only the from square and the to square, even if it's a capture
+* - If kingside castles write 00
+* - If queenside castles write 000
+* - if promotion write "from_square"+"to_square"+"=Q" for examples
+*/
+// TODO: Refactor
+
+template<color VColor>
+inline std::optional<move> game::from_dooce_algebraic_notation(const std::string& m)
+{
+	std::vector<move> moves = legal_moves<VColor>();
+	if (m == "00")
+	{
+		move mv;
+		mv.set_from(0);
+		mv.set_to(0);
+		mv.set_moved_piece_type(piece_type::king);
+		mv.set_move_type(move_type::king_castle);
+		if (std::find(moves.begin(), moves.end(), mv) != moves.end())
+		{
+			return mv;
+		}
+		else return {};
+	}
+
+	else if (m == "000")
+	{
+		move mv;
+		mv.set_from(0);
+		mv.set_to(0);
+		mv.set_moved_piece_type(piece_type::king);
+		mv.set_move_type(move_type::queen_castle);
+		if (std::find(moves.begin(), moves.end(), mv) != moves.end())
+		{
+			return mv;
+		}
+		else return {};
+	}
+
+
+	std::string from;
+	from.push_back(m[0]);
+	from.push_back(m[1]);
+	uint from_idx = str_to_sq_idx(from);
+	bitboard from_set = ops::set_nth_bit(from_idx);
+	std::string to;
+	to.push_back(m[0]);
+	to.push_back(m[1]);
+	uint to_idx = str_to_sq_idx(to);
+	bitboard to_set = ops::set_nth_bit(to_idx);
+	auto [move_ptype, c] = b.get_occupation_of_idx(to_idx);
+	if (!move_ptype.has_value()) return {};
+	if (c != gc.turn) return {};
+	auto captured_ptype = determine_capturing(c, ops::set_nth_bit(to_idx));
+	bool promo;
+	std::optional<piece_type> promo_ptype;
+	promo = determine_promo<VColor>(ops::set_nth_bit(to_idx));
+	// No promo specified
+
+	if (promo)
+	{
+		std::map<char, piece_type> char_to_pt = { { 'Q',piece_type::queen },{ 'R',piece_type::rook },{ 'N',piece_type::knight },{ 'B', piece_type::bishop } };
+		if (m.size() < 6) return {};
+		promo_ptype = char_to_pt[m[5]];
+	}
+
+	move_type mtype;
+	if (captured_ptype.has_value()) mtype = move_type::captures;
+	if (move_ptype.value() == piece_type::pawn && !captured_ptype.has_value())
+	{
+
+		bitboard epl = gen::en_passant_left<VColor>(b, gc.en_passantable_pawn);
+		bitboard epr = gen::en_passant_right<VColor>(b, gc.en_passantable_pawn);
+		if (epl == to_idx || epr == to_idx) mtype = move_type::en_passant;
+		else
+		{
+			// determine if pawn push
+			bitboard to_ = gen::move_pawns_single<VColor>(from_set, b);
+			if (to_ == to_set) mtype = move_type::pawn_single;
+			else mtype = move_type::pawn_double;
+		}
+	}
+
+	if (promo && !captured_ptype.has_value())
+	{
+		mtype = move_type::promo;
+	}
+
+	else if (promo && captured_ptype.has_value())
+	{
+		mtype = move_type::promo_captures;
+	}
+
+	move mv;
+	mv.set_from(from_idx);
+	mv.set_to(to_idx);
+	mv.set_captured_piece_type(captured_ptype);
+	mv.set_promo_piece_type(promo_ptype);
+	mv.set_move_type(mtype);
+	mv.set_moved_piece_type(move_ptype.value());
+	if (std::find(moves.begin(), moves.end(), mv) != moves.end())
+	{
+		return mv;
+	}
+	else return {};
 }
 
 game::game() : b(), gc(), zh()
@@ -433,10 +590,9 @@ const board& game::get_board() const
 	return b;
 }
 
-bool game::is_threefold_repetition() const
-{
-	return is_threefold_rep;
-}
+// TODO: Use FD_TEMPLATE_FUNCTION for that
+
+FD_TEMPLATE_FUNCTION(std::optional<move>, from_dooce_algebraic_notation, const std::string&);
 
 template bitboard game::gen_attack_bb_except_en_passant<color::white>() const;
 template bitboard game::gen_attack_bb_except_en_passant<color::black>() const;
@@ -456,10 +612,7 @@ template void game::push_promo_moves<color::black>(std::vector<move>& out, move&
 template void game::gen_attack_moves_from_pawns<color::white>(std::vector<move>& out);
 template void game::gen_attack_moves_from_pawns<color::black>(std::vector<move>& out);
 
-template void game::gen_attack_moves_from_piece<color::white>
-(std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
-template void game::gen_attack_moves_from_piece<color::black>
-(std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
+FD_ATTACK_TEMPLATE_FUNCTION(void, gen_attack_moves_from_piece, std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
 
 template void game::gen_move_pawn_push<color::white>(std::vector<move>& out);
 template void game::gen_move_pawn_push<color::black>(std::vector<move>& out);
@@ -470,8 +623,7 @@ template void game::gen_move_en_passant<color::black>(std::vector<move>& out, en
 template void game::gen_move_castling<color::white>(std::vector<move>& out);
 template void game::gen_move_castling<color::black>(std::vector<move>& out);
 
-template std::vector<move> game::legal_moves<color::white>();
-template std::vector<move> game::legal_moves<color::black>();
+FD_ATTACK_TEMPLATE_FUNCTION(std::vector<move>, legal_moves);
 
 template void game::do_move<color::white>(const move& m);
 template void game::do_move<color::black>(const move& m);
@@ -481,3 +633,5 @@ template void game::undo_move<color::black>();
 
 template std::pair<bool,bool> game::can_castle<color::white>() const;
 template std::pair<bool, bool> game::can_castle<color::black>() const;
+
+

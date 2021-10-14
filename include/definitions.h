@@ -7,6 +7,10 @@ typedef std::bitset<64> bitboard_constr;
 typedef uint64_t bitboard;
 typedef uint64_t u64;
 typedef unsigned int uint;
+typedef int64_t i64;
+
+inline constexpr i64 pos_inf = 999999999;
+inline constexpr i64 neg_inf = -999999999;
 
 static_assert(sizeof(unsigned long long) == sizeof(uint64_t), "unsigned long long needs to be 64 bit");
 

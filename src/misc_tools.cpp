@@ -12,3 +12,13 @@ std::vector<std::string> misc_tools::split(const std::string& str, char delim)
 	}
 	return out;
 }
+
+bool contains(const std::string& str, char c)
+{
+	for (char c_ : str)
+	{
+		if (c_ == c) return true;
+	}
+	return false;
+}
+

@@ -157,6 +157,17 @@ namespace ops
 		 b &= (b - 1);
 	}
 
+	inline int count_number_of_set_bits(bitboard b)
+	{
+		int count = 0;
+		while (b != 0)
+		{
+			count++;
+			ops::pop_lsb(b);
+		}
+		return count;
+	}
+
 	inline bitboard_constr get_antidiag(uint x, uint y)
 	{
 		// info: this is init, so don't care about performance

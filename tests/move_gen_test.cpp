@@ -10,8 +10,6 @@
 
 namespace
 {
-    // TODO: Write in Python a test function that goes through the whole tree and checks wether something is missing or is too much.
-
     template<color VColor>
     void check_branches_inner(game& g, int depth, int indent)
     {
@@ -37,12 +35,6 @@ namespace
         {
             const auto& m = fen2move[fen];
             g.do_move<VColor>(m);
-            //if (fen::board_to_fen(g.get_board()) == "1rbqkbnr/pppppppp/2n5/1P6/8/8/P1PPPPPP/RNBQKBNR")
-            //{
-            //    printf("JETZT");
-            //    auto& gc = g.get_game_context();
-            //    printf("%s", gc.turn == color::white ? "white" : "black");
-            //}
             for (int i = 0; i < indent * 2; i++) { printf(" "); }
             printf("%s\n", fen.c_str());
             
@@ -240,49 +232,6 @@ TEST_CASE("Move generation king")
         validate_position(g, 1, perft_results{ 5, 1, 0, 0, 0 });
     }
 }
-
-#if 0
-TEST_CASE("Castling")
-{
-    SECTION("Queenside")
-    {
-        // TODO: transform position into FEN string
-        game_info ginfo_castling;
-        ginfo_castling.has_moved_kingside_rook = true;
-        ginfo_castling.has_moved_king = false;
-        ginfo_castling.has_moved_queenside_rook = false;
-        game g(
-            "r...k..."
-            "........"
-            "........"
-            "........"
-            "........"
-            "........"
-            "........"
-            "....K...", ginfo, ginfo_castling, color::black, 0ull);
-        validate_position(g, 1, perft_results{ 16, 0, 0, 1, 0 });
-    }
-
-    SECTION("Kingside")
-    {
-        // TODO: transform position into FEN string
-        game_info ginfo_castling;
-        ginfo_castling.has_moved_queenside_rook = true;
-        ginfo_castling.has_moved_king = false;
-        ginfo_castling.has_moved_kingside_rook = false;
-        game g(
-            "....k..r"
-            "........"
-            "........"
-            "........"
-            "........"
-            "........"
-            "........"
-            "....K...", ginfo, ginfo_castling, color::black, 0ull);
-        validate_position(g, 1, perft_results{ 15, 0, 0, 1, 0 });
-    }
-}
-#endif
 
 TEST_CASE("Move Generation pawn")
 {

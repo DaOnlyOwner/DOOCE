@@ -3,6 +3,7 @@
 #include "definitions.h"
 #include "bitwise_ops.h"
 #include "move.h"
+#include <optional>
 
 #include <string>
 
@@ -38,6 +39,8 @@ public:
 	
 	template<color VColor>
 	bitboard get_board_of_side_not() const;
+
+	std::pair<std::optional<piece_type>, color> board::get_occupation_of_idx(uint idx) const;
 
 	void recalculate_boards();
 

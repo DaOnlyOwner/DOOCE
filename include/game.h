@@ -6,6 +6,10 @@
 #include <string>
 #include <vector>
 #include "zobrist_hash.h"
+#include "array_vector.h"
+#include "misc_tools.h"
+#include <map>
+#include <xutility>
 
 class game
 {
@@ -20,7 +24,7 @@ public:
 	game& operator=(game&&) = default;
 	~game() = default;
 
-	template<color VColor>
+	template<color VColor, bool VOnlyCaptures = false>
 	std::vector<move> legal_moves();
 
 	template<color VColor>
@@ -39,32 +43,43 @@ public:
 
 	const board& get_board() const;
 
-	bool is_threefold_repetition() const;
+	bool is_last_move_threefold_repetition() const;
+
+	uint get_ply() const;
+
+	template<color VColor>
+	void gen_piece_attacks_for_idx(uint idx, array_vector<piece_type, 6>& out) const;
+
+	// The dooce algebraic notation:
+	/*
+	* - Specify only the from square and the to square, even if it's a capture
+	* - If kingside castles write 00
+	* - If queenside castles write 000
+	* - if promotion write "from_square"+"to_square"+"=Q" for examples
+	*/
+	// TODO: Refactor
+	template<color VColor>
+	std::optional<move> from_dooce_algebraic_notation(const std::string& m);
 
 private:
 	struct move_list_elements
 	{
-		move_list_elements(const move& m, const game_context& gc, const zobrist_hash& zh, bool is_threefold)
-			: m(m),gc(gc),zh(zh),is_threefold_rep(is_threefold){}
+		move_list_elements(const move& m, const game_context& gc, const zobrist_hash& zh)
+			: m(m),gc(gc),zh(zh){}
 		move m;
 		game_context gc;
 		zobrist_hash zh;
-		bool is_threefold_rep;
 	};
-
 
 	game_context gc;
 	board b;
 	zobrist_hash zh;
-	bool is_threefold_rep = false;
 	// Retrieving the game_context from the stack is much simpler.
 	std::vector<move_list_elements> move_list;
 
 	static bool init;
 
-	bool is_last_move_threefold_repetition() const;
-
-	template<color VColor>
+	template<color VColor, bool VOnlyCaptures>
 	void gen_attack_moves_from_piece(std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint));
 
 	template<color VColor>

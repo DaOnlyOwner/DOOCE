@@ -20,8 +20,8 @@ struct move
 {
 	uint from, to;
 	piece_type moved;
-	std::optional<piece_type> captured; // TODO: don't make this optional, only use this if the mtype indicates it's a capture, otherwise ignore
-	std::optional<piece_type> promo;    // TODO: don't make this optional, only use this if the mtype indicates it's a promo, otherwise ignore
+	std::optional<piece_type> captured;
+	std::optional<piece_type> promo;    
 	move_type mtype;
 
 	move() = default;
@@ -29,7 +29,7 @@ struct move
 	move(uint from, uint to, piece_type moved, piece_type captured, piece_type promo, move_type mtype)
 		:from(from),to(to),moved(moved),captured(captured),promo(promo),mtype(mtype){}
 
-	// TODO: remove all those getters / setters, this struct is supposed to contain no logic, just data
+	// TODO: Move the getter and setter to the cpp file
 
 	void set_from(uint from)
 	{
@@ -102,4 +102,9 @@ struct move
 	{
 		return promo.value();
 	}
+
 };
+
+bool operator==(const move& lhs, const move& rhs);
+
+
