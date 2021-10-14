@@ -25,4 +25,6 @@ i64 eval::operator()(const game& g)
 		material_difference(piece_type::pawn, b) * pWt +
 		material_difference(piece_type::queen, b) * qWt +
 		material_difference(piece_type::king, b) * kWt;
+
+	return material_score;
 }
