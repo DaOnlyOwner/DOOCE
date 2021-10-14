@@ -1,4 +1,5 @@
 #pragma once
+// TODO: Move to cpp file
 #include "definitions.h"
 #include "move.h"
 #include "board.h"
@@ -8,8 +9,6 @@
 #include "zobrist_hash.h"
 #include "array_vector.h"
 #include "misc_tools.h"
-#include <map>
-#include <xutility>
 
 class game
 {
@@ -55,7 +54,7 @@ public:
 	* - Specify only the from square and the to square, even if it's a capture
 	* - If kingside castles write 00
 	* - If queenside castles write 000
-	* - if promotion write "from_square"+"to_square"+"=Q" for examples
+	* - if promotion write "from_square"+"to_square"+"=Q" for example
 	*/
 	// TODO: Refactor
 	template<color VColor>

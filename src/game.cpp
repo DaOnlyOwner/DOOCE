@@ -1,5 +1,7 @@
 #include "game.h"
 #include "attack_bitboards.h"
+#include <map>
+#include <algorithm>
 
 #define FD_ATTACK_TEMPLATE_FUNCTION(rt, name, ...) \
 template rt game::##name##<color::white,true>( __VA_ARGS__ ); \
