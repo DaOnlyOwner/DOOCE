@@ -2,11 +2,11 @@
 #include <array>
 #include <type_traits>
 
-template<typename T, int size>
+template<typename T, int VSize>
 class array_vector
 {
 public:
-	typedef std::array<T, size> array_t;
+	typedef std::array<T, VSize> array_t;
 	void push_back(T&& val)
 	{
 		data[size++] = std::move(val);
