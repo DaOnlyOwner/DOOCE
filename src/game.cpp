@@ -4,18 +4,18 @@
 #include <algorithm>
 
 #define FD_ATTACK_TEMPLATE_FUNCTION(rt, name, ...) \
-template rt game::##name##<color::white,true>( __VA_ARGS__ ); \
-template rt game::##name##<color::black, true>(__VA_ARGS__);\
-template rt game::##name##<color::white, false>(__VA_ARGS__);\
-template rt game::##name##<color::black, false>(__VA_ARGS__)
+template rt game::name<color::white,true>( __VA_ARGS__ ); \
+template rt game::name<color::black, true>(__VA_ARGS__);\
+template rt game::name<color::white, false>(__VA_ARGS__);\
+template rt game::name<color::black, false>(__VA_ARGS__)
 
 #define FD_CONST_TEMPLATE_FUNCTION(rt, name, ...) \
-template rt game::##name##<color::white>(  __VA_ARGS__ ) const;\
-template rt game::##name##<color::black>(  __VA_ARGS__ ) const
+template rt game::name<color::white>(  __VA_ARGS__ ) const;\
+template rt game::name<color::black>(  __VA_ARGS__ ) const
 
 #define FD_TEMPLATE_FUNCTION(rt, name, ...) \
-template rt game::##name##<color::white>(  __VA_ARGS__ );\
-template rt game::##name##<color::black>(  __VA_ARGS__ ) 
+template rt game::name<color::white>(  __VA_ARGS__ );\
+template rt game::name<color::black>(  __VA_ARGS__ ) 
 
 
 bool game::init = false;
@@ -449,8 +449,8 @@ template<color VColor>
 void game::gen_piece_attacks_for_idx(uint idx, array_vector<piece_type, 6>& out) const
 {
 	bitboard set_bit = ~ops::set_nth_bit(idx);
-	bitboard b = gen_attack_bb_from_piece(b.get_board(piece_type::bishop, VColor), &gen::attacks_bishop);
-	if (b & set_bit > 0) out.push_back(piece_type::bishop);
+	bitboard b_ = gen_attack_bb_from_piece(b.get_board(piece_type::bishop, VColor), &gen::attacks_bishop);
+	if (b_ & set_bit > 0) out.push_back(piece_type::bishop);
 	bitboard r = gen_attack_bb_from_piece(b.get_board(piece_type::rook, VColor), &gen::attacks_rook);
 	if (r & set_bit > 0) out.push_back(piece_type::bishop);
 	bitboard q = gen_attack_bb_from_piece(b.get_board(piece_type::queen, VColor), &gen::attacks_queen);

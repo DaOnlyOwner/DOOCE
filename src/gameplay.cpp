@@ -2,10 +2,6 @@
 #include <algorithm>
 #include "fen.h"
 
-#define FD_GAMEPLAY_FUNC(rv, name, ...)\
-rv gameplay::##name##<color::white>( __VA_ARGS__ )\
-rv gameplay::##name##<color::black>(__VA_ARGS__)
-
 namespace
 {
 
