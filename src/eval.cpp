@@ -19,12 +19,11 @@ i64 eval::operator()(const game& g)
 	
 	const board& b = g.get_board();
 
-	material_score = material_difference(piece_type::bishop, b)* bWt +
+	material_score = material_difference(piece_type::bishop, b) * bWt +
 		material_difference(piece_type::knight, b) * nWt +
 		material_difference(piece_type::rook, b) * rWt +
 		material_difference(piece_type::pawn, b) * pWt +
-		material_difference(piece_type::queen, b) * qWt +
-		material_difference(piece_type::king, b) * kWt;
+		material_difference(piece_type::queen, b) * qWt;
 
 	return material_score;
 }

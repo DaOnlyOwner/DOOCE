@@ -42,9 +42,11 @@ public:
 
 	const board& get_board() const;
 
-	bool is_last_move_threefold_repetition() const;
+	bool is_draw_by_rep() const;
+	bool is_draw_by_halfmoves() const;
 
 	uint get_ply() const;
+	u64 get_hash() const;
 
 	template<color VColor>
 	void gen_piece_attacks_for_idx(uint idx, array_vector<piece_type, 6>& out) const;
@@ -101,7 +103,7 @@ private:
 
 	template<color VColor>
 	bool determine_promo(bitboard set_bit) const;
-	std::optional<piece_type> determine_capturing(color c, bitboard set_bit) const;
+	piece_type determine_capturing(color c, bitboard set_bit) const;
 
 	template<color VColor>
 	void gen_move_pawn_push(std::vector<move>& out);

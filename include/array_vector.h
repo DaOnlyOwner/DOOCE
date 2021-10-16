@@ -24,7 +24,7 @@ public:
 	}
 
 	template<typename... TArgs>
-	void emplace_back(const TArgs& args ...)
+	void emplace_back(const TArgs&... args)
 	{
 		data[size++] = T(args...);
 	}

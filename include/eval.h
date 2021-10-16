@@ -14,7 +14,6 @@ private:
 	static constexpr int bWt = 340;
 	static constexpr int nWt = 300;
 	static constexpr int qWt = 900;
-	static constexpr int kWt = pos_inf;
 	static constexpr int pWt = 100;
 	static constexpr int rWt = 500;
 

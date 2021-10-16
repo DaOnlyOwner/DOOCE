@@ -83,6 +83,8 @@ namespace
 
 TEST_CASE("Debug")
 {
+    //game g;
+    //validate_position(g, 1, perft_results{ 20, 0, 0, 0, 0 });
     //benchmark_perft(6);
     //benchmark_perft(5);
     //check_branches("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4);
@@ -91,6 +93,25 @@ TEST_CASE("Debug")
 }
 
 #if 1
+TEST_CASE("Move struct")
+{
+    move m;
+    m.set_from(5);
+    m.set_to(10);
+    m.set_captured_piece_type(piece_type::bishop);
+    m.set_promo_piece_type(piece_type::knight);
+    m.set_moved_piece_type(piece_type::queen);
+    m.set_move_type(move_type::promo_captures);
+
+    REQUIRE(m.get_from_as_idx() == 5);
+    REQUIRE(m.get_to_as_idx() == 10);
+    REQUIRE(m.get_captured_piece_type() == piece_type::bishop);
+    REQUIRE(m.get_promo_piece_type() == piece_type::knight);
+    REQUIRE(m.get_moved_piece_type() == piece_type::queen);
+    REQUIRE(m.get_move_type() == move_type::promo_captures);
+}
+
+
 // Positions from chessprogramming.org
 TEST_CASE("Perft Position 2")
 {

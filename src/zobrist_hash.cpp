@@ -133,7 +133,7 @@ void zobrist_hash::do_undo_move(uint ep_previous,const std::array<castling_info,
 	hash ^= ep_square_hash[ep_idx];
 	auto& ci_after = gc_after.castling_info_for_sides;
 
-	/*for (int c = 0; c < 2; c++)
+	for (int c = 0; c < 2; c++)
 	{
 		if (ci_previous[c].kingside_right() != ci_after[c].kingside_right())
 		{
@@ -144,7 +144,7 @@ void zobrist_hash::do_undo_move(uint ep_previous,const std::array<castling_info,
 		{
 			hash ^=	castling_rights_hash[c][1];
 		}
-	}*/
+	}
 	hash ^= black_to_move_hash;
 }
 

@@ -7,21 +7,44 @@ typedef std::bitset<64> bitboard_constr;
 typedef uint64_t bitboard;
 typedef uint64_t u64;
 typedef unsigned int uint;
+typedef int16_t i16;
 typedef int64_t i64;
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
 
-inline constexpr i64 pos_inf = 999999999;
-inline constexpr i64 neg_inf = -999999999;
+inline constexpr i64 pos_inf = 30000;
+inline constexpr i64 neg_inf = -30000;
 
 static_assert(sizeof(unsigned long long) == sizeof(uint64_t), "unsigned long long needs to be 64 bit");
 
 enum class piece_type : uint
 {
-	pawn=0, rook=1, bishop=2, knight=3, king=4, queen=5
+	pawn=0, rook, bishop, knight, king, queen,none
 };
+
+constexpr inline bool piece_has_value(piece_type pt)
+{
+	return pt != piece_type::none;
+}
 
 enum class color : uint
 {
 	white=0, black=1
+};
+
+enum class move_type : uint
+{
+	quiet = 0,
+	pawn_single = 1,
+	pawn_double = 2,
+	king_castle = 3,
+	queen_castle = 4,
+	captures = 5,
+	en_passant = 6,
+	promo = 7,
+	promo_captures = 8,
+	none = 9
 };
 
 constexpr inline color invert_color(color c)

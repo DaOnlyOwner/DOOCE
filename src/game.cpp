@@ -20,6 +20,11 @@ template rt game::##name##<color::black>(  __VA_ARGS__ )
 
 bool game::init = false;
 
+u64 game::get_hash() const
+{
+	return zh.get_hash();
+}
+
 template<color VColor, bool VOnlyCaptures>
 void game::gen_attack_moves_from_piece(std::vector<move>& out, bitboard piece_occ, piece_type ptype, bitboard(*fn)(const board&, uint))
 {
@@ -40,14 +45,14 @@ void game::gen_attack_moves_from_piece(std::vector<move>& out, bitboard piece_oc
 			m.set_to(to);
 			auto captured = determine_capturing(VColor, ops::set_nth_bit(to));
 			m.set_captured_piece_type(captured);
-			move_type mtype = captured.has_value() ? move_type::captures : move_type::quiet;
+			move_type mtype = piece_has_value(captured) ? move_type::captures : move_type::quiet;
 			m.set_move_type(mtype);
 
 			// If we only want to generate capturing moves than we test if there is a captured piece and add it when it's legal.
 			// Otherwise we just add the move regardless wether it is a capture or not.
 			if constexpr (VOnlyCaptures)
 			{
-				if (captured.has_value())
+				if (piece_has_value(captured))
 					add_when_legal<VColor>(out, m);
 				ops::pop_lsb(attacks);
 				continue;
@@ -92,12 +97,12 @@ void game::gen_attack_moves_from_pawns_inner(move& m, bitboard attack, std::vect
 	move_type mtype;
 
 	m.set_captured_piece_type(captured);
-	if (captured.has_value() && promo)
+	if (piece_has_value(captured) && promo)
 	{
 		m.set_move_type(move_type::promo_captures);
 		push_promo_moves<VColor>(out, m);
 	}
-	else if (captured.has_value())
+	else if (piece_has_value(captured))
 	{
 		m.set_move_type(move_type::captures);
 		add_when_legal<VColor>(out, m);
@@ -153,7 +158,7 @@ bitboard game::gen_attack_bb_from_piece(bitboard piece_occ, bitboard(*fn)(const 
 	return attacks;
 }
 
-std::optional<piece_type> game::determine_capturing(color c, bitboard set_bit) const
+piece_type game::determine_capturing(color c, bitboard set_bit) const
 {
 	color ec = invert_color(c);
 	bitboard not_set_bit = ~set_bit;
@@ -169,7 +174,7 @@ std::optional<piece_type> game::determine_capturing(color c, bitboard set_bit) c
 	else if ((n & not_set_bit) != n) return piece_type::knight;
 	else if ((r & not_set_bit) != r) return piece_type::rook;
 	else if ((q & not_set_bit) != q) return piece_type::queen;
-	else return {};
+	else return piece_type::none;
 }
 
 template<color VColor>
@@ -285,6 +290,11 @@ void game::gen_move_castling(std::vector<move>& out)
 		move m(0, 0, moved, {}, {}, mtype);
 		out.push_back(m);
 	}
+}
+
+bool game::is_draw_by_halfmoves() const
+{
+	return gc.half_move_clock >= 50;
 }
 
 template<color VColor, bool VOnlyCaptures>
@@ -408,8 +418,9 @@ std::pair<bool,bool> game::can_castle() const
 	return std::make_pair(can_castle_kingside,can_castle_queenside);
 }
 
-bool game::is_last_move_threefold_repetition() const
+bool game::is_draw_by_rep() const
 {
+	if (move_list.size() < 3) return false;
 	const auto& to_check = move_list[move_list.size() - 1];
 	if (to_check.m.get_moved_piece_type() == piece_type::pawn
 		|| to_check.m.get_move_type() == move_type::captures)
@@ -511,7 +522,7 @@ inline std::optional<move> game::from_dooce_algebraic_notation(const std::string
 	if (c != gc.turn) return {};
 	auto captured_ptype = determine_capturing(c, ops::set_nth_bit(to_idx));
 	bool promo;
-	std::optional<piece_type> promo_ptype;
+	piece_type promo_ptype = piece_type::none;
 	promo = determine_promo<VColor>(ops::set_nth_bit(to_idx));
 	// No promo specified
 
@@ -523,8 +534,8 @@ inline std::optional<move> game::from_dooce_algebraic_notation(const std::string
 	}
 
 	move_type mtype;
-	if (captured_ptype.has_value()) mtype = move_type::captures;
-	if (move_ptype.value() == piece_type::pawn && !captured_ptype.has_value())
+	if (piece_has_value(captured_ptype)) mtype = move_type::captures;
+	if (move_ptype == piece_type::pawn && !piece_has_value(captured_ptype))
 	{
 
 		bitboard epl = gen::en_passant_left<VColor>(b, gc.en_passantable_pawn);
@@ -539,12 +550,12 @@ inline std::optional<move> game::from_dooce_algebraic_notation(const std::string
 		}
 	}
 
-	if (promo && !captured_ptype.has_value())
+	if (promo && !piece_has_value(captured_ptype))
 	{
 		mtype = move_type::promo;
 	}
 
-	else if (promo && captured_ptype.has_value())
+	else if (promo && piece_has_value(captured_ptype))
 	{
 		mtype = move_type::promo_captures;
 	}
