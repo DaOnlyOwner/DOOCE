@@ -25,8 +25,9 @@ docker build . -t "dooce-test"
 ```
 
 ## Manual Build
-
+```sh
 mkdir build
 cd build
 cmake . ..
 cmake --build .
+```

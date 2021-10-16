@@ -61,10 +61,10 @@ void zobrist_hash::handle_quiet_move(uint ptype, uint c, uint from, uint to)
 		^ piece_hash[c][ptype][to];
 }
 
-template<color c>
+template<color VColor>
 void zobrist_hash::do_undo_move(uint ep_previous,const std::array<castling_info,2> ci_previous, const game_context& gc_after, const move& m)
 {
-	constexpr uint c_idx = static_cast<uint>(c);
+	constexpr uint c_idx = static_cast<uint>(VColor);
 	uint from = m.get_from_as_idx();
 	uint to = m.get_to_as_idx();
 	uint ptype = static_cast<uint>(m.get_moved_piece_type());
