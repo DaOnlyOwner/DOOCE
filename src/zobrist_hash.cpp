@@ -86,7 +86,7 @@ void zobrist_hash::do_undo_move(uint ep_previous,const std::array<castling_info,
 	case move_type::en_passant:
 	{
 		handle_quiet_move(ptype, c_idx, from, to);
-		if constexpr (c == color::white)
+		if constexpr (VColor == color::white)
 			hash ^= piece_hash[1 - c_idx][ptype][to + 8];
 		else hash ^= piece_hash[1 - c_idx][ptype][to - 8];
 	}
@@ -107,20 +107,20 @@ void zobrist_hash::do_undo_move(uint ep_previous,const std::array<castling_info,
 	break;
 	case move_type::king_castle:
 	{
-		constexpr uint rook_from_square = sq_to_int(c == color::white ? square::h1 : square::h8);
-		constexpr uint rook_to_square = sq_to_int(c == color::white ? square::f1 : square::f8);
-		constexpr uint king_from_square = sq_to_int(c == color::white ? square::e1 : square::e8);
-		constexpr uint king_to_square = sq_to_int(c == color::white ? square::g1 : square::g8);
+		constexpr uint rook_from_square = sq_to_int(VColor == color::white ? square::h1 : square::h8);
+		constexpr uint rook_to_square = sq_to_int(VColor == color::white ? square::f1 : square::f8);
+		constexpr uint king_from_square = sq_to_int(VColor == color::white ? square::e1 : square::e8);
+		constexpr uint king_to_square = sq_to_int(VColor == color::white ? square::g1 : square::g8);
 		handle_quiet_move(static_cast<uint>(piece_type::rook), c_idx, rook_from_square, rook_to_square);
 		handle_quiet_move(static_cast<uint>(piece_type::king), c_idx, king_from_square, king_to_square);
 	}
 	break;
 	case move_type::queen_castle:
 	{
-		constexpr auto rook_from_square = sq_to_int(c == color::white ? square::a1 : square::a8);
-		constexpr auto rook_to_square = sq_to_int(c == color::white ? square::d1 : square::d8);
-		constexpr auto king_from_square = sq_to_int(c == color::white ? square::e1 : square::e8);
-		constexpr auto king_to_square = sq_to_int(c == color::white ? square::c1 : square::c8);
+		constexpr auto rook_from_square = sq_to_int(VColor == color::white ? square::a1 : square::a8);
+		constexpr auto rook_to_square = sq_to_int(VColor == color::white ? square::d1 : square::d8);
+		constexpr auto king_from_square = sq_to_int(VColor == color::white ? square::e1 : square::e8);
+		constexpr auto king_to_square = sq_to_int(VColor == color::white ? square::c1 : square::c8);
 		handle_quiet_move(static_cast<uint>(piece_type::rook), c_idx, rook_from_square, rook_to_square);
 		handle_quiet_move(static_cast<uint>(piece_type::king), c_idx, king_from_square, king_to_square);
 	}
