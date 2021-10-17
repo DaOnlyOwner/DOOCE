@@ -50,8 +50,11 @@ class trans_table
 {
 
 public:
-	trans_table()
+	trans_table(u64 cap):cap(cap)
 	{
+		if (cap == 0) throw std::runtime_error("No capacity for tt");
+		if ((cap & (cap - 1)) != 0)
+			throw std::runtime_error("Capacity is not a power of two");
 		container.resize(cap);
 	}
 
@@ -82,9 +85,9 @@ public:
 	}
 
 private:
-	static constexpr size_t cap = 1 << 27; // == 134217728; 2GB cache
 	trans_entry nullentry{};
 	std::vector<trans_entry> container;
+	u64 cap;
 
 	u64 idx(u64 hash) const
 	{

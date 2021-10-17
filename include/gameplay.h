@@ -8,14 +8,6 @@
 #include "move.h"
 #include <vector>
 
-class time_up : std::exception
-{
-	std::string what()
-	{
-		return "Times up!";
-	}
-};
-
 struct move_info
 {
 	int score = 0;
@@ -26,20 +18,22 @@ struct move_info
 class gameplay
 {
 public:
-	gameplay(int time_mins) :time_mins(time_mins) {}
+	gameplay(float time_mins) :time_mins(time_mins),t(time_mins * 60.f * 1000.f) {}
 	virtual move_info pick_next_move() = 0;
-	virtual void incoming_move(const move& m) = 0; 
+	virtual bool incoming_move(const move& m) = 0; 
+	void start() { t.restart(); }
 
-private:
-	int time_mins; 
+protected:
+	float time_mins;
+	timer t;
 };
 
-class gameplay_st : gameplay
+class gameplay_st : public gameplay
 {
 public:
-	gameplay_st(int time_mins, const game& g);
+	gameplay_st(float time_mins, const game& g, u64 cap_tt);
 	virtual move_info pick_next_move() override;
-	virtual void incoming_move(const move& m) override;
+	virtual bool incoming_move(const move& m) override;
 
 private:
 	TT tt;
@@ -48,7 +42,7 @@ private:
 	template<color VColor>
 	int negamax(const timer& t, int depth_left, int alpha, int beta, int color);
 	int quiesence_search();
-	std::pair<int,int> iterative_deepening(int ms);
+	std::pair<int,int> iterative_deepening(float ms);
 	int ply = 0;
 };
 

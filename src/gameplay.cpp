@@ -9,10 +9,10 @@ namespace
     void get_pv_inner(std::vector<move>& out, game& g, const TTable& table)
     {
         auto pv_node = table[g.get_hash()];
-        move best_move = pv_node.best_move;
-        out.push_back(pv_node.best_move);
-        if (pv_node.f != decltype(pv_node)::flag::none && pv_node.f != decltype(pv_node)::flag::alpha)
+        if (pv_node.f != decltype(pv_node)::flag::none)
         {
+            move best_move = pv_node.best_move;
+            out.push_back(pv_node.best_move);
             g.do_move<VColor>(best_move);
             get_pv_inner<invert_color(VColor)>(out, g, table);
             g.undo_move<VColor>();
@@ -31,75 +31,88 @@ namespace
     }
 }
 
-gameplay_st::gameplay_st(int time_mins, const game& g):
-gameplay(time_mins),g(g)
+gameplay_st::gameplay_st(float time_mins, const game& g, u64 cap_tt):
+gameplay(time_mins),g(g),tt(cap_tt)
 {
 }
 
 move_info gameplay_st::pick_next_move()
 {
     // For now just call with 10 seconds and see how far I come
-    //int depth = 2;
+    //int depth = 5;
     //auto score = negamax<color::white>(timer(10000), depth, neg_inf, pos_inf, 1);
     //move_info info;
     //info.depth = depth;
     //info.score = score;
     //info.principal_variation = get_pv(g, tt);
     //return info;
-    auto [score,depth] = iterative_deepening(10000);
+    float think_time = 60*1000*(time_mins / 35.f); // Assume 35 moves for a game for now.
+    t.restart();
+    auto [score,depth] = iterative_deepening(think_time);
     move_info info;
     info.depth = depth;
     info.principal_variation = get_pv(g, tt);
     info.score = score;
     ply++;
+    
+    // Apply the move
+    if (g.get_game_context().turn == color::white) g.do_move<color::white>(info.principal_variation[0]);
+    else g.do_move<color::black>(info.principal_variation[0]);
+
+    t.stop();
     return info;
 }
 
-void gameplay_st::incoming_move(const move& m)
+bool gameplay_st::incoming_move(const move& m)
 {
+
+    auto moves = g.legal_moves<color::white>();
+    if (std::find(moves.begin(), moves.end(), m) == moves.end())
+    {
+        return false;
+    }
+
     if (g.get_game_context().turn == color::white)
     {
         g.do_move<color::white>(m);
     }
     else g.do_move<color::black>(m);
     ply++;
+    return true;
 }
 
-std::pair<int,int> gameplay_st::iterative_deepening(int ms)
+std::pair<int, int> gameplay_st::iterative_deepening(float ms)
 {
     int depth = 3;
     int score = 0;
     timer t(ms);
     while (true)
     {
-        try
-        {
-            if (g.get_game_context().turn == color::white)
-            {
-                t.restart();
-                score = negamax<color::white>(t, depth, neg_inf, pos_inf, 1);
-            }
-            else
-            {
-                t.restart();
-                score = negamax<color::black>(t, depth, neg_inf, pos_inf, -1);
-            }
+        // If time is up or the last iteration took more than 85% of the time.
+        if (t.time_is_up() || t.action_took_time_of_span() > 0.60f)
+        {    
+           break;
         }
-        catch (const time_up& tu)
+        if (g.get_game_context().turn == color::white)
         {
-            // Times up, nothing to do.
-            break;
+            t.action_now();
+            score = negamax<color::white>(t, depth, neg_inf, pos_inf, 1);
+        }
+        else
+        {
+            t.action_now();
+            score = -negamax<color::black>(t, depth, neg_inf, pos_inf, -1);
         }
         depth++;
     }
-    return std::make_pair(score,depth);
+    return std::make_pair(score, depth);
 }
 
 // See https://en.wikipedia.org/wiki/Negamax
 template<color VColor>
 int gameplay_st::negamax(const timer& t, int depth_left, int alpha, int beta, int c)
 {
-    if (t.time_is_up()) throw time_up();
+    //if (t.time_is_up()) throw time_up();
     int orig_alpha = alpha;
     trans_entry& e = tt[g.get_hash()];
     // e.depth stores the values for a search to depth e.depth.
@@ -125,7 +138,7 @@ int gameplay_st::negamax(const timer& t, int depth_left, int alpha, int beta, in
 
 
     auto moves = g.legal_moves<VColor>();
-    bool is_in_check = g.is_in_check<VColor>();
+    //bool is_in_check = g.is_in_check<VColor>();
     //depth_left = is_in_check ? depth_left + 1 : depth_left;
     if (moves.size() == 0)
     {

@@ -8,7 +8,7 @@ class eval
 {
 public:
 	
-	i64 operator()(const game& b);
+	int operator()(const game& b);
 
 private:
 	static constexpr int bWt = 340;

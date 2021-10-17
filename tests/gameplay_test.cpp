@@ -4,7 +4,7 @@
 
 TEST_CASE("Debug")
 {
-	gameplay_st gp(5,game());
+	gameplay_st gp(5,game(), 1 << 15); // 1 << 27 for performance tests
 	auto mi = gp.pick_next_move();
 
 	printf("Reached depth: %i\n", mi.depth);

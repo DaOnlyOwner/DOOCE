@@ -2,20 +2,20 @@
 
 namespace
 {
-	i64 material_difference(piece_type ptype, const board& b)
+	int material_difference(piece_type ptype, const board& b)
 	{
 		bitboard bbw = b.get_board(ptype, color::white);
 		bitboard bbb = b.get_board(ptype, color::black);
 		int w = ops::count_number_of_set_bits(bbw);
 		int b_ = ops::count_number_of_set_bits(bbb);
-		return bbw - bbb;
+		return w - b_;
 	}
 }
 
 
-i64 eval::operator()(const game& g)
+int eval::operator()(const game& g)
 {
-	i64 material_score;
+	int material_score;
 	
 	const board& b = g.get_board();
 

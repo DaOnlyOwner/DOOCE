@@ -13,8 +13,8 @@ typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 
-inline constexpr i64 pos_inf = 30000;
-inline constexpr i64 neg_inf = -30000;
+inline constexpr i16 pos_inf = 30000;
+inline constexpr i16 neg_inf = -30000;
 
 static_assert(sizeof(unsigned long long) == sizeof(uint64_t), "unsigned long long needs to be 64 bit");
 

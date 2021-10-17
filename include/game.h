@@ -62,6 +62,8 @@ public:
 	template<color VColor>
 	std::optional<move> from_dooce_algebraic_notation(const std::string& m);
 
+	std::string from_move_to_dooce_algebraic_notation(const move& m);
+
 private:
 	struct move_list_elements
 	{
