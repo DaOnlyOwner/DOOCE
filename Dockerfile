@@ -4,10 +4,9 @@ FROM ubuntu:20.04
 
 # install the build toolchain (gcc, cmake)
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y build-essential cmake && \
+RUN apt-get update && apt-get install -y build-essential cmake && apt-get install python3 \
     rm -rf /var/lib/apt/lists/*
     
-RUN apt-get install -y python3
 
 # print the build toolchain versions
 RUN cmake --version && gcc --version
