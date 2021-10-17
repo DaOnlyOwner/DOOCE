@@ -7,7 +7,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y build-essential cmake && \
     rm -rf /var/lib/apt/lists/*
     
-RUN sudo apt-get install -y python
+RUN apt-get install -y python
 
 # print the build toolchain versions
 RUN cmake --version && gcc --version
