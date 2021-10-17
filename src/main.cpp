@@ -39,6 +39,10 @@ PYBIND11_MODULE(dooce, m)
 		});
 
 	
+	py::class_<piece>(m, "Piece")
+		.def_readonly("color", &piece::c)
+		.def_readonly("type", &piece::type);
+
 	py::class_<timer>(m, "Timer")
 		.def(py::init<float>())
 		.def("restart", &timer::restart)
