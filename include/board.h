@@ -11,7 +11,7 @@
 
 void fill_board(std::string& out, bitboard b, piece_type pt, color c);
 
-typedef std::array<std::array<piece, 8>, 8> mailbox;
+typedef std::array<std::array<std::optional<piece>, 8>, 8> mailbox;
 
 class board
 {

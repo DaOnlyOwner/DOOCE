@@ -149,7 +149,7 @@ bitboard& board::get_board(piece_type ptype, color c)
 
 mailbox board::as_mailbox() const
 {
-	mailbox mb;
+	mailbox mb{};
 	for (int c = 0; c < 2; c++)
 	{
 		for (int pt = 0; pt < 6; pt++)
