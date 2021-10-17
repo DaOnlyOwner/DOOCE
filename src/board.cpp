@@ -23,6 +23,7 @@ void fill_board(std::string& out, bitboard b, piece_type pt, color c)
 	}
 }
 
+
 // TODO: declare the start formation in another way, no string serialization anymore
 board::board() :board(
 	"rnbqkbnr"
@@ -34,6 +35,21 @@ board::board() :board(
 	"PPPPPPPP"
 	"RNBQKBNR"
 ) {}
+
+void board::fill_mailbox(color c, piece_type pt, mailbox& mb) const
+{
+	bitboard bb = get_board(pt, c);
+	while (bb != 0)
+	{
+		uint idx = ops::num_trailing_zeros(bb);
+		auto [x,y] = ops::from_idx(idx);
+		piece p;
+		p.c = c;
+		p.type = pt;
+		mb[x][y] = p;
+		ops::pop_lsb(bb);
+	}
+}
 
 board::board(const std::string& start) : boards{}
 {
@@ -129,6 +145,21 @@ std::string board::get_bitboard(bitboard b)
 bitboard& board::get_board(piece_type ptype, color c)
 {
 	return boards[static_cast<uint>(ptype)][static_cast<uint>(c)];
+}
+
+mailbox board::as_mailbox() const
+{
+	mailbox mb;
+	for (int c = 0; c < 2; c++)
+	{
+		for (int pt = 0; pt < 6; pt++)
+		{
+			color c_ = static_cast<color>(c);
+			piece_type pt_ = static_cast<piece_type>(pt);
+			fill_mailbox(c_, pt_, mb);
+		}
+	}
+	return mb;
 }
 
 bitboard board::get_whole_board() const

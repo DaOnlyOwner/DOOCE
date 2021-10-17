@@ -209,6 +209,7 @@ PYBIND11_MODULE(dooce, m)
 		.def("get_board_of_side_not", [](const board& b, color c) {return c == color::white ?
 			b.get_board_of_side_not<color::white>() : b.get_board_of_side_not<color::black>(); }, "the same as ~get_board_of_side()")
 		.def("get_whole_board", &board::get_whole_board, "Retrieves the whole bitboard (all pieces, both colors) ")
+		.def("as_mailbox",&board::as_mailbox, "Casts the board represenation as a mailbox format")
 		.def("__repr__", [](const board& b) {return fen::board_to_fen(b); });
 
 	py::class_<game>(m, "Game")

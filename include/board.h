@@ -6,10 +6,12 @@
 #include <optional>
 
 #include <string>
-
+#include <array>
 
 
 void fill_board(std::string& out, bitboard b, piece_type pt, color c);
+
+typedef std::array<std::array<piece, 8>, 8> mailbox;
 
 class board
 {
@@ -36,6 +38,7 @@ public:
 	template<color VColor>
 	bitboard get_board_of_side() const;
 	bitboard get_whole_board() const;
+	mailbox as_mailbox() const;
 	
 	template<color VColor>
 	bitboard get_board_of_side_not() const;
@@ -60,5 +63,6 @@ private:
 	bitboard not_black_side, not_white_side;
 
 	inline void handle_quiet_move(bitboard& own, bitboard from, bitboard to);
+	void fill_mailbox(color c, piece_type pt, mailbox& mb) const;
 };
 
