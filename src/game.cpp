@@ -475,7 +475,7 @@ void game::gen_piece_attacks_for_idx(uint idx, array_vector<piece_type, 6>& out)
 // TODO: Refactor
 
 
-std::string from_move_to_dooce_algebraic_notation(const move& m)
+std::string game::from_move_to_dooce_algebraic_notation(const move& m)
 {
 	std::map<piece_type,char> pt_to_char = { { piece_type::queen,'Q'},{piece_type::rook,'R'},{piece_type::knight,'N'},{piece_type::bishop,'B'}};
 	if (m.get_move_type() == move_type::king_castle) return "00";
