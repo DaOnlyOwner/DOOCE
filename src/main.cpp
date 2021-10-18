@@ -32,7 +32,8 @@ PYBIND11_MODULE(dooce, m)
 	
 	py::class_<gameplay>(m, "Gameplay")
 		.def("pick_next_move", &gameplay::pick_next_move)
-		.def("incoming_move", &gameplay::incoming_move);
+		.def("incoming_move", &gameplay::incoming_move)
+		.def("get_game",&gameplay::get_game);
 
 	m.def("make_gameplay_st", [](const game& g, float minutes_to_play, int cap_tt)
 		{

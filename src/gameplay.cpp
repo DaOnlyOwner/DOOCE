@@ -63,6 +63,11 @@ move_info gameplay_st::pick_next_move()
     return info;
 }
 
+const game& gameplay_st::get_game()
+{
+    return g;
+}
+
 bool gameplay_st::incoming_move(const move& m)
 {
 
