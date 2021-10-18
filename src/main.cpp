@@ -10,6 +10,9 @@
 #include "perft.h"
 #include "gameplay.h"
 
+
+#define VERSION "0.8"
+
 // https://stackoverflow.com/questions/2653214/stringification-of-a-macro-value
 #define xstr(a) str(a)
 #define str(a) #a
@@ -41,6 +44,10 @@ PYBIND11_MODULE(dooce, m)
 		});
 
 	
+	m.def("version", []() {return VERSION; });
+	m.def("sq_idx_to_str", &sq_idx_to_str);
+	m.def("str_to_sq_idx", &str_to_sq_idx);
+
 	py::class_<piece>(m, "Piece")
 		.def_readonly("color", &piece::c)
 		.def_readonly("type", &piece::type);
