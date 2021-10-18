@@ -4,9 +4,11 @@ FROM ubuntu:20.04
 
 # install the build toolchain (gcc, cmake)
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y build-essential cmake python3 && \
+RUN apt-get update && apt-get install -y build-essential cmake \
+        python3 python3-distutils && \
+    # python3-pip (.deb not required because there's no pip package to be installed) \
+    # pip3 install pip --upgrade && pip3 install scikit-build && \
     rm -rf /var/lib/apt/lists/*
-
 
 # print the build toolchain versions
 RUN cmake --version && gcc --version
