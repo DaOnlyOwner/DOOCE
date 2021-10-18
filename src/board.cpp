@@ -41,7 +41,7 @@ void board::fill_mailbox(color c, piece_type pt, mailbox& mb) const
 	bitboard bb = get_board(pt, c);
 	while (bb != 0)
 	{
-		uint idx = ops::num_trailing_zeros(bb);
+		uint idx = ops::flip_idx(ops::num_trailing_zeros(bb));
 		auto [x,y] = ops::from_idx(idx);
 		piece p;
 		p.c = c;
