@@ -16,7 +16,7 @@
 
 namespace py = pybind11;
 
-#define MAKE_VALUE(enum_, val) value(xstr(val), enum_##::##val)
+#define MAKE_VALUE(enum_, val) value(xstr(val), enum_::val)
 #define MAKE_SQUARE_VALUE(val) MAKE_VALUE(square,val)
 #define MAKE_PIECE_VALUE(val) MAKE_VALUE(piece_type, val)
 #define MAKE_MOVE_VALUE(val) MAKE_VALUE(move_type, val)

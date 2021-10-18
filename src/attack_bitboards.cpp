@@ -1,4 +1,3 @@
-#pragma once
 #include "attack_bitboards.h"
 
 namespace
