@@ -33,7 +33,7 @@ PYBIND11_MODULE(dooce, m)
 	py::class_<gameplay>(m, "Gameplay")
 		.def("pick_next_move", &gameplay::pick_next_move)
 		.def("incoming_move", &gameplay::incoming_move)
-		.def("get_game",&gameplay::get_game);
+		.def("get_game",&gameplay::get_game,py::return_value_policy::reference_internal);
 
 	m.def("make_gameplay_st", [](const game& g, float minutes_to_play, int cap_tt)
 		{
@@ -242,7 +242,7 @@ PYBIND11_MODULE(dooce, m)
 			{
 				return g.get_game_context().turn == color::white ? g.is_in_check<color::white>() : g.is_in_check<color::black>();
 			}, "Is the king of the current side in check?")
-				.def("get_board", &game::get_board)
+				.def("get_board", &game::get_board,py::return_value_policy::reference_internal)
 				.def("is_draw_by_rep", &game::is_draw_by_rep)
 				.def("is_draw_by_halfmoves", &game::is_draw_by_halfmoves)
 				.def("from_dooce_algebraic_notation", [](game& g, const std::string& mv) {
