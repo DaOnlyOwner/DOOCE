@@ -111,7 +111,7 @@ inline std::string sq_idx_to_str(uint idx)
 inline uint str_to_sq_idx(const std::string& sq)
 {
 	int x = 'h' - sq[0];
-	int y = '8' - sq[1];
+	int y = (sq[1] - '0')-1;
 	return y * 8 + x;
 }
 

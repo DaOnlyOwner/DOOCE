@@ -64,6 +64,8 @@ public:
 
 	std::string from_move_to_dooce_algebraic_notation(const move& m);
 
+	bool is_move_valid(const move& m);
+
 private:
 	struct move_list_elements
 	{

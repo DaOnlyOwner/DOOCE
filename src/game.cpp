@@ -489,32 +489,41 @@ std::string game::from_move_to_dooce_algebraic_notation(const move& m)
 	return out;
 }
 
+
+bool game::is_move_valid(const move& m)
+{
+	std::vector<move> out;
+	if (gc.turn == color::white)
+		out = legal_moves<color::white>();
+	else
+		out = legal_moves<color::black>();
+	return std::find(out.begin(), out.end(), m) != out.end();
+}
+
 template<color VColor>
 inline std::optional<move> game::from_dooce_algebraic_notation(const std::string& m)
 {
 	std::vector<move> moves = legal_moves<VColor>();
 	if (m == "00")
 	{
-		move mv;
+		move mv{};
 		mv.set_from(0);
 		mv.set_to(0);
 		mv.set_moved_piece_type(piece_type::king);
 		mv.set_move_type(move_type::king_castle);
-		if (std::find(moves.begin(), moves.end(), mv) != moves.end())
-		{
+		if (is_move_valid(mv))
 			return mv;
-		}
 		else return {};
 	}
 
 	else if (m == "000")
 	{
-		move mv;
+		move mv{};
 		mv.set_from(0);
 		mv.set_to(0);
 		mv.set_moved_piece_type(piece_type::king);
 		mv.set_move_type(move_type::queen_castle);
-		if (std::find(moves.begin(), moves.end(), mv) != moves.end())
+		if (is_move_valid(mv))
 		{
 			return mv;
 		}
@@ -528,12 +537,12 @@ inline std::optional<move> game::from_dooce_algebraic_notation(const std::string
 	uint from_idx = str_to_sq_idx(from);
 	bitboard from_set = ops::set_nth_bit(from_idx);
 	std::string to;
-	to.push_back(m[0]);
-	to.push_back(m[1]);
+	to.push_back(m[2]);
+	to.push_back(m[3]);
 	uint to_idx = str_to_sq_idx(to);
 	bitboard to_set = ops::set_nth_bit(to_idx);
-	auto [move_ptype, c] = b.get_occupation_of_idx(to_idx);
-	if (!move_ptype.has_value()) return {};
+	auto [move_ptype, c] = b.get_occupation_of_idx(from_idx);
+	if (!piece_has_value(move_ptype)) return {};
 	if (c != gc.turn) return {};
 	auto captured_ptype = determine_capturing(c, ops::set_nth_bit(to_idx));
 	bool promo;
@@ -548,7 +557,7 @@ inline std::optional<move> game::from_dooce_algebraic_notation(const std::string
 		promo_ptype = char_to_pt[m[5]];
 	}
 
-	move_type mtype;
+	move_type mtype = move_type::quiet;
 	if (piece_has_value(captured_ptype)) mtype = move_type::captures;
 	if (move_ptype == piece_type::pawn && !piece_has_value(captured_ptype))
 	{
@@ -581,8 +590,8 @@ inline std::optional<move> game::from_dooce_algebraic_notation(const std::string
 	mv.set_captured_piece_type(captured_ptype);
 	mv.set_promo_piece_type(promo_ptype);
 	mv.set_move_type(mtype);
-	mv.set_moved_piece_type(move_ptype.value());
-	if (std::find(moves.begin(), moves.end(), mv) != moves.end())
+	mv.set_moved_piece_type(move_ptype);
+	if (is_move_valid(mv))
 	{
 		return mv;
 	}
