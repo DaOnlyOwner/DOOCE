@@ -13,16 +13,27 @@ endif()
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT dooce)
-file(GLOB_RECURSE FILES "src/*.cpp" "include/*.h")
+file(GLOB_RECURSE FILES "src/*.cpp" "include/*.h" "extern/dearimgui/src/*.cpp")
 
-add_subdirectory(extern/pybind11)
+find_package(OpenGL REQUIRED COMPONENTS OpenGL)
 
-pybind11_add_module(dooce ${FILES})
-target_include_directories(dooce PRIVATE "include")
-set_target_properties(dooce
-    PROPERTIES
-        CXX_STANDARD 17
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO
-)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
+
+add_subdirectory(extern/glfw)
 add_subdirectory(tests)
+
+add_executable(dooce ${FILES})
+target_include_directories(dooce PRIVATE extern/glfw/include)
+target_include_directories(dooce PRIVATE extern/dearimgui/include)
+target_include_directories(dooce PRIVATE "include")
+target_include_directories(dooce PRIVATE "extern/stbimage")
+target_link_libraries(dooce glfw)
+target_link_libraries (dooce ${OPENGL_LIBRARIES})
+set_target_properties(dooce PROPERTIES
+            CXX_STANDARD 17
+            CXX_EXTENSIONS OFF
+	    CXX_STANDARD_REQUIRED ON
+	     )

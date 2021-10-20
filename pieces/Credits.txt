@@ -1,0 +1,1 @@
+SVGs are from lichess: https://github.com/ornicar/lila

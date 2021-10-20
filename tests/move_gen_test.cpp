@@ -112,6 +112,28 @@ TEST_CASE("Move struct")
 }
 
 
+TEST_CASE("Check")
+{
+    std::string repr =
+        "rnbq.bnr"
+        "...k.Q.."
+        "........"
+        "PPpNpppp"
+        "....P..."
+        "........"
+        "..PP.PPP"
+        "R.B.KBKR";
+
+    game_context start_context;
+    start_context.castling_info_for_sides = { {true,true,true,true,true,true} };
+    start_context.en_passantable_pawn = 0ULL;
+    start_context.fullmoves = 1;
+    start_context.turn = color::black;
+    start_context.half_move_clock = 0;
+    game g(repr, start_context);
+    REQUIRE(g.legal_moves<color::black>().size() == 4);
+}
+
 // Positions from chessprogramming.org
 TEST_CASE("Perft Position 2")
 {
