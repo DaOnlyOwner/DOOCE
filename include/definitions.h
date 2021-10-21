@@ -57,6 +57,20 @@ struct piece
 {
 	color c;
 	piece_type type;
+	bool operator<(const piece& lh) const
+	{
+		int c_ = static_cast<int>(c);
+		int t = static_cast<int>(type);
+		int lc = static_cast<int>(lh.c);
+		int lt = static_cast<int>(lh.type);
+		return std::tie(c_,t) < std::tie(lc,lt);
+	}
+
+	bool operator==(const piece& lh) const
+	{
+		return lh.c == c && lh.type == type;
+	}
+
 };
 
 // TODO: refactor addressing the bitboard starting with A1=0, A2=1, ..., H1=7, A2=8, ..., H8=63

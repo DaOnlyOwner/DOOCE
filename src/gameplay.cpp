@@ -31,8 +31,8 @@ namespace
     }
 }
 
-gameplay_st::gameplay_st(float time_mins, const game& g, u64 cap_tt):
-gameplay(time_mins),g(g),tt(cap_tt)
+gameplay_st::gameplay_st(float time_mins, color my_turn, const game& g, u64 cap_tt):
+gameplay(time_mins,my_turn),g(g),tt(cap_tt)
 {
 }
 
@@ -63,10 +63,16 @@ move_info gameplay_st::pick_next_move()
     return info;
 }
 
-const game& gameplay_st::get_game()
+const game& gameplay_st::get_game() const
 {
     return g;
 }
+
+game& gameplay_st::get_game()
+{
+    return g;
+}
+
 
 bool gameplay_st::incoming_move(const move& m)
 {

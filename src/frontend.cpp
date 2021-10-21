@@ -1,18 +1,28 @@
 #define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "frontend.h"
-#define BOARD_SIZE 640
 #include <cstdio>
 #include "stb_image.h"
-#include "GLFW/glfw3.h"
 #include <tuple>
+#include "board.h"
+#include "imgui_stdlib.h"
+#include "fen.h"
+#include "stb_image_resize.h"
+#include <cstdlib>
+#include "bitwise_ops.h"
+#include <optional>
 
 namespace
 {
 	std::tuple<bool,GLuint,int,int> load_image(const char* path)
 	{
-		int w, h;
-		auto data = stbi_load(path, &w, &h, nullptr, 4);
-		if (data == nullptr)
+		int w_nonscaled, h_nonscaled;
+		auto data = stbi_load(path, &w_nonscaled, &h_nonscaled, nullptr, 4);
+		int w = 0.14 * w_nonscaled;
+		int h = 0.14 * h_nonscaled;
+		stbi_uc* scaled_data = (stbi_uc*)malloc(sizeof(stbi_uc) * w *h*4);
+		stbir_resize_uint8(data, w_nonscaled, h_nonscaled, 0, scaled_data, w, h, 0, 4);
+		if (data == nullptr || scaled_data == nullptr)
 			return { false,0,0,0 };
 		GLuint img;
 		glGenTextures(1, &img);
@@ -21,20 +31,49 @@ namespace
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, scaled_data);
 		stbi_image_free(data);
+		free(scaled_data);
 		return { true,img,w,h };
 	}
+
+	void set_image(const char* path, std::map<piece, image>& m,piece p)
+	{
+		auto [succ, img, w, h] = load_image(path);
+		if (!succ) throw std::runtime_error(std::string("Failed to load image ") + path);
+		image img_;
+		img_.w = w;
+		img_.h = h;
+		img_.id = img;
+		m[p] = img_;
+	}
+
 }
 
-frontend::frontend()
+frontend::frontend() : tt_error_timer(1000*5),mtt_error_timer(1000*5),fen_error_timer(1000*5),move_invalid_timer(1000*5)
 {
+	tt_error_timer.stop();
+	mtt_error_timer.stop();
+	fen_error_timer.stop();
+	move_invalid_timer.stop();
+	set_image(RESOURCE_DIR "/wB.png", pieceToImage, { color::white,piece_type::bishop });
+	set_image(RESOURCE_DIR "/wQ.png", pieceToImage, { color::white,piece_type::queen });
+	set_image(RESOURCE_DIR "/wR.png", pieceToImage, { color::white,piece_type::rook });
+	set_image(RESOURCE_DIR "/wK.png", pieceToImage, { color::white,piece_type::king });
+	set_image(RESOURCE_DIR "/wN.png", pieceToImage, { color::white,piece_type::knight });
+	set_image(RESOURCE_DIR "/wP.png", pieceToImage, { color::white,piece_type::pawn });
+
+	set_image(RESOURCE_DIR "/bB.png", pieceToImage, { color::black,piece_type::bishop });
+	set_image(RESOURCE_DIR "/bQ.png", pieceToImage, { color::black,piece_type::queen });
+	set_image(RESOURCE_DIR "/bR.png", pieceToImage, { color::black,piece_type::rook });
+	set_image(RESOURCE_DIR "/bK.png", pieceToImage, { color::black,piece_type::king });
+	set_image(RESOURCE_DIR "/bN.png", pieceToImage, { color::black,piece_type::knight });
+	set_image(RESOURCE_DIR "/bP.png", pieceToImage, { color::black,piece_type::pawn });
 
 }
 
 void frontend::render_board(ImDrawList* dl)
 {
-	constexpr int sq_size = BOARD_SIZE / 8;
 	ImVec2 min = ImGui::GetWindowContentRegionMin();
 	ImVec2 pos = ImGui::GetWindowPos();
 	int c = 1;
@@ -51,14 +90,237 @@ void frontend::render_board(ImDrawList* dl)
 	}
 }
 
+std::pair<ImVec2, ImVec2> frontend::get_min_max(int x, int y, piece p, ImVec2 offset)
+{
+	auto pos = ImGui::GetWindowPos();
+	image& img = pieceToImage[p];
+	float offset_x = piece_offsets_x[p.type];
+	float offset_y = piece_offsets_y[p.type];
+	auto min = ImVec2(x * sq_size + pos.x + offset_x + offset.x, y * sq_size + pos.y + offset_y + offset.y);
+	auto max = ImVec2(x * sq_size + pos.x + img.w + offset_x + offset.x, y * sq_size + pos.y + img.h + offset_y + offset.y);
+	return { min,max };
+}
+
+void frontend::render_pieces(ImDrawList* dl)
+{
+	if (gp == nullptr) return;
+	auto mailbox = gp->get_game().get_board().as_mailbox();
+	for (int x = 0; x < 8; x++)
+	{
+		for (int y = 0; y < 8; y++)
+		{
+			if (from == point{ x,y })
+				continue;
+			auto p = mailbox[x][y];
+			if (!p.has_value()) continue;
+			image& img = pieceToImage[p.value()];
+			auto [min, max] = get_min_max(x, y, p.value(), { 0, 0});
+			dl->AddImage((void*)img.id, min, max);
+		}
+	}
+
+	if (from.is_valid())
+	{
+		auto p = mailbox[from.x][from.y];
+		image& img = pieceToImage[p.value()];
+		auto [min, max] = get_min_max(from.x, from.y, p.value(), { (float)delta.x,(float)delta.y });
+		dl->AddImage((void*)img.id, min, max);
+	}
+
+
+}
+
+bool frontend::clicked_on_piece()
+{
+	if (gp == nullptr) return false;
+	auto mailbox = gp->get_game().get_board().as_mailbox();
+	auto pos = ImGui::GetMousePos();
+	for (int x = 0; x < 8; x++)
+	{
+		for (int y = 0; y < 8; y++)
+		{
+			auto p = mailbox[x][y];
+			if (!p.has_value()) continue;
+			auto& img = pieceToImage[p.value()];
+			auto [min, max] = get_min_max(x, y, p.value(), { 0,0 });
+			auto r = rect{ point{(int)min.x,(int)min.y},point{(int)max.x,(int)max.y} };
+			auto click_pos = point{ (int)pos.x,(int)pos.y };
+			if (r.contains_point(click_pos))
+			{
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void frontend::update_click()
+{
+	if (gp == nullptr) return;
+	auto mailbox = gp->get_game().get_board().as_mailbox();
+	if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && !from.is_valid())
+	{
+		auto pos = ImGui::GetMousePos();
+		for (int x = 0; x < 8; x++)
+		{
+			for (int y = 0; y < 8; y++)
+			{
+				auto p = mailbox[x][y];
+				if (!p.has_value()) continue;
+				auto& img = pieceToImage[p.value()];
+				auto [min, max] = get_min_max(x, y, p.value(), { 0,0 });
+				auto r = rect{ point{(int)min.x,(int)min.y},point{(int)max.x,(int)max.y} };
+				auto click_pos = point{ (int)pos.x,(int)pos.y };
+				if (r.contains_point(click_pos))
+				{
+					from = { x,y };
+					last_mp = click_pos;
+				}
+			}
+		}
+	}
+}
+
+void frontend::update_drag()
+{
+	if (gp == nullptr) return;
+	//printf("%i", from.is_valid());
+	if (ImGui::IsMouseDragging(ImGuiMouseButton_Left) && from.is_valid())
+	{
+		auto pos = ImGui::GetMousePos();
+		delta = { delta.x + (int)pos.x - last_mp.x,delta.y + (int)pos.y - last_mp.y };
+		last_mp = point{ (int)pos.x,(int)pos.y };
+	}
+}
+
+std::pair<point,point> frontend::update_let_go()
+{
+	if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && from.is_valid())
+	{
+		printf("%i", from.is_valid());
+		for (int x = 0; x < 8; x++)
+		{
+			for (int y = 0; y < 8; y++)
+			{
+				auto r = rect{ {x * sq_size,y * sq_size},{x * sq_size + sq_size,y * sq_size + sq_size} };
+				auto mp = point{ (int)ImGui::GetMousePos().x,(int)ImGui::GetMousePos().y };
+				if (r.contains_point(mp))
+				{
+					auto to = point{ x,y };
+					auto from_ = from;
+					from.set_invalid();
+					delta = { 0,0 };
+					return{ from_,to };
+				}
+			}
+		}
+		from.set_invalid();
+		delta = { 0,0 };
+	}
+}
+
+void frontend::render_gui()
+{
+	ImGui::InputFloat("Minutes to think",&minutes_to_think);
+	ImGui::InputInt("Transposition table size exponent",&tt_size_exponent);
+	ImGui::InputText("From FEN", &from_fen); 
+
+	if (ImGui::Button("New Game"))
+	{
+		if (minutes_to_think == 0)
+		{
+			minutes_to_think = 5;
+			mtt_error_timer.restart();
+		}
+		if (tt_size_exponent == 0)
+		{
+			tt_size_exponent = 20;
+			tt_error_timer.restart();
+		}
+
+		game g;
+		try
+		{
+			g = fen::fen_to_game(from_fen);
+		}
+		catch (std::exception& e)
+		{
+			fen_error_timer.restart();
+			return;
+		}
+
+		// For now the computer can only play black
+		gp = std::unique_ptr<gameplay>(new gameplay_st(minutes_to_think, color::black, g, 1ULL<<tt_size_exponent));
+	}
+
+	if (mtt_error_timer.is_running())
+	{
+		ImGui::TextColored(ImVec4(1, 0, 0, 1), "Using value of 5 for minutes to think");
+	}
+
+	if (tt_error_timer.is_running())
+	{
+		ImGui::TextColored(ImVec4(1, 0, 0, 1), "Using value of 20 for transposition table size exponent");
+	}
+
+	if (fen_error_timer.is_running())
+	{
+		ImGui::TextColored(ImVec4(1, 0, 0, 1), "FEN String was invalid");
+	}
+
+	if (move_invalid_timer.is_running())
+	{
+		ImGui::TextColored(ImVec4(1, 0, 0, 1), "Move was invalid");
+	}
+
+}
+
+void frontend::update_game(const point& from_, const point& to)
+{
+	if (gp == nullptr || !from_.is_valid() || !to.is_valid()) return;
+	int idx_from = ops::to_idx(7-from_.x, 7-from_.y);
+	int idx_to = ops::to_idx(7-to.x, 7-to.y);
+	// Doesn't check for promotions right now.
+	std::string from_str = sq_idx_to_str(idx_from);
+	std::string to_str = sq_idx_to_str(idx_to);
+	std::optional<move> m;
+	if (gp->get_game().get_game_context().turn == color::white)
+		m = gp->get_game().from_dooce_algebraic_notation<color::white>(from_str + to_str);
+	else m = gp->get_game().from_dooce_algebraic_notation<color::black>(from_str + to_str);
+	if (!m.has_value())
+	{
+		move_invalid_timer.restart();
+		return;
+	}
+	gp->incoming_move(m.value());
+}
 
 void frontend::render()
 {
 
-	ImGui::SetNextWindowSize({ BOARD_SIZE+15, BOARD_SIZE+30});
-	//ImGui::SetNextWindowPos({0.f,0.f}, 1);
-	ImGui::Begin("Board",false,ImGuiWindowFlags_NoResize);
-	auto* dl = ImGui::GetWindowDrawList();
-	render_board(dl);
+	if (gp != nullptr)
+	{
+		bool open = true;
+		ImGui::SetNextWindowSize({ BOARD_SIZE + 15, BOARD_SIZE + 30 });
+		if (ImGui::Begin("Board", &open, ImGuiWindowFlags_NoResize))
+		{
+			update_click();
+			update_drag();
+			auto [from_,to] = update_let_go();
+			update_game(from_,to);
+			auto* dl = ImGui::GetWindowDrawList();
+			render_board(dl);
+			render_pieces(dl);
+			ImGui::End();
+		}
+		if (!open)
+		{
+			gp = nullptr;
+		}
+	}
+
+	ImGui::Begin("Options");
+	render_gui();
 	ImGui::End();
+
 }

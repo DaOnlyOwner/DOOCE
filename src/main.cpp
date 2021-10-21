@@ -47,6 +47,7 @@ GLFWwindow* init_all()
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     (void)io;
+    io.ConfigWindowsMoveFromTitleBarOnly = true;
 
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init();

@@ -3,12 +3,18 @@
 void timer::restart()
 {
 	start = std::chrono::steady_clock::now();
+	running = true;
 }
 
 bool timer::time_is_up() const
 {
 	auto span = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
 	return span > ms;
+}
+
+bool timer::is_running() const
+{
+	return running && !time_is_up();
 }
 
 void timer::action_now()
@@ -42,6 +48,7 @@ void timer::stop()
 {
 	auto span = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
 	ms -= span;
+	running = false;
 }
 
 

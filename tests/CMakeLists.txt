@@ -3,6 +3,7 @@ project(tests LANGUAGES CXX C)
 
 file(GLOB_RECURSE FILES_ "../include/*.h" "../src/*.cpp")
 list(FILTER FILES_ EXCLUDE REGEX "main.cpp")
+list(FILTER FILES_ EXCLUDE REGEX "frontend.cpp")
 
 add_executable(move_gen_test ${FILES_} move_gen_test.cpp)
 set_target_properties(move_gen_test

@@ -16,9 +16,11 @@ public:
 	float sec_left() const;
 	float min_left() const;
 	void stop();
+	bool is_running() const;
 
 private:
 	std::chrono::steady_clock::time_point start;
 	std::chrono::steady_clock::time_point action_tp;
+	bool running = false;
 	u64 ms = 0;
 };
