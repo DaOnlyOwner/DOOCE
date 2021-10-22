@@ -11,6 +11,8 @@
 #include <cstdlib>
 #include "bitwise_ops.h"
 #include <optional>
+#include <iomanip>
+#include <sstream>
 
 namespace
 {
@@ -50,12 +52,11 @@ namespace
 
 }
 
-frontend::frontend() : tt_error_timer(1000*5),mtt_error_timer(1000*5),fen_error_timer(1000*5),move_invalid_timer(1000*5)
+frontend::frontend() : tt_error_timer(1000*5),mtt_error_timer(1000*5),fen_error_timer(1000*5)
 {
 	tt_error_timer.stop();
 	mtt_error_timer.stop();
 	fen_error_timer.stop();
-	move_invalid_timer.stop();
 	set_image(RESOURCE_DIR "/wB.png", pieceToImage, { color::white,piece_type::bishop });
 	set_image(RESOURCE_DIR "/wQ.png", pieceToImage, { color::white,piece_type::queen });
 	set_image(RESOURCE_DIR "/wR.png", pieceToImage, { color::white,piece_type::rook });
@@ -69,7 +70,6 @@ frontend::frontend() : tt_error_timer(1000*5),mtt_error_timer(1000*5),fen_error_
 	set_image(RESOURCE_DIR "/bK.png", pieceToImage, { color::black,piece_type::king });
 	set_image(RESOURCE_DIR "/bN.png", pieceToImage, { color::black,piece_type::knight });
 	set_image(RESOURCE_DIR "/bP.png", pieceToImage, { color::black,piece_type::pawn });
-
 }
 
 void frontend::render_board(ImDrawList* dl)
@@ -88,6 +88,22 @@ void frontend::render_board(ImDrawList* dl)
 		}
 		c = 1 - c;
 	}
+
+	for (int x = 0; x < 8; x++)
+	{
+		std::string txt;
+		txt += 'a' + x;
+		dl->AddText({ x * sq_size + pos.x + sq_size/2.f,BOARD_SIZE + pos.y + 35 }, 
+			ImGui::ColorConvertFloat4ToU32({ 1.f, 1.f, 1.f, 1.f }), txt.c_str());
+	}
+
+	for (int y = 0; y < 8; y++)
+	{
+		std::string txt;
+		txt += '0' + (8-y);
+		dl->AddText({ BOARD_SIZE + pos.x+22, y * sq_size + pos.y +59},
+			ImGui::ColorConvertFloat4ToU32({ 1.f, 1.f, 1.f, 1.f }), txt.c_str());
+	}
 }
 
 std::pair<ImVec2, ImVec2> frontend::get_min_max(int x, int y, piece p, ImVec2 offset)
@@ -104,7 +120,7 @@ std::pair<ImVec2, ImVec2> frontend::get_min_max(int x, int y, piece p, ImVec2 of
 void frontend::render_pieces(ImDrawList* dl)
 {
 	if (gp == nullptr) return;
-	auto mailbox = gp->get_game().get_board().as_mailbox();
+	auto mailbox = back_buffer.get_board().as_mailbox();
 	for (int x = 0; x < 8; x++)
 	{
 		for (int y = 0; y < 8; y++)
@@ -114,7 +130,7 @@ void frontend::render_pieces(ImDrawList* dl)
 			auto p = mailbox[x][y];
 			if (!p.has_value()) continue;
 			image& img = pieceToImage[p.value()];
-			auto [min, max] = get_min_max(x, y, p.value(), { 0, 0});
+			auto [min, max] = get_min_max(x, y, p.value(), { 0, 0 });
 			dl->AddImage((void*)img.id, min, max);
 		}
 	}
@@ -126,14 +142,12 @@ void frontend::render_pieces(ImDrawList* dl)
 		auto [min, max] = get_min_max(from.x, from.y, p.value(), { (float)delta.x,(float)delta.y });
 		dl->AddImage((void*)img.id, min, max);
 	}
-
-
 }
 
 bool frontend::clicked_on_piece()
 {
 	if (gp == nullptr) return false;
-	auto mailbox = gp->get_game().get_board().as_mailbox();
+	auto mailbox = back_buffer.get_board().as_mailbox();
 	auto pos = ImGui::GetMousePos();
 	for (int x = 0; x < 8; x++)
 	{
@@ -157,7 +171,7 @@ bool frontend::clicked_on_piece()
 void frontend::update_click()
 {
 	if (gp == nullptr) return;
-	auto mailbox = gp->get_game().get_board().as_mailbox();
+	auto mailbox = back_buffer.get_board().as_mailbox();
 	if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && !from.is_valid())
 	{
 		auto pos = ImGui::GetMousePos();
@@ -193,16 +207,17 @@ void frontend::update_drag()
 	}
 }
 
-std::pair<point,point> frontend::update_let_go()
+std::pair<point, point> frontend::update_let_go()
 {
 	if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) && from.is_valid())
 	{
-		printf("%i", from.is_valid());
+		auto wp = ImGui::GetWindowPos();
+		auto min = ImGui::GetWindowContentRegionMin();
 		for (int x = 0; x < 8; x++)
 		{
 			for (int y = 0; y < 8; y++)
 			{
-				auto r = rect{ {x * sq_size,y * sq_size},{x * sq_size + sq_size,y * sq_size + sq_size} };
+				auto r = rect{ {x * sq_size + (int)min.x + (int)wp.x,y * sq_size + (int)min.y + (int)wp.y},{x * sq_size + (int)min.x + sq_size + (int)wp.x,y * sq_size + (int)min.y + sq_size + (int)wp.y} };
 				auto mp = point{ (int)ImGui::GetMousePos().x,(int)ImGui::GetMousePos().y };
 				if (r.contains_point(mp))
 				{
@@ -216,7 +231,23 @@ std::pair<point,point> frontend::update_let_go()
 		}
 		from.set_invalid();
 		delta = { 0,0 };
+		return {from, { -1,-1 }};
 	}
+	return { {-1,-1}, { -1,-1 } };
+}
+
+void frontend::render_info()
+{
+	ImGui::Text("Score: %f", score);
+	ImGui::Text("Reached depth: %i", depth);
+	ImGui::InputTextMultiline("Principal Variation", &pv, ImVec2(100, 100), ImGuiInputTextFlags_ReadOnly);
+	ImGui::Separator();
+	std::string current_fen = fen::game_to_fen(back_buffer);
+	ImGui::InputText("Current FEN", &current_fen, ImGuiInputTextFlags_ReadOnly);
+	std::stringstream stream;
+	stream << std::hex << back_buffer.get_hash();
+	std::string hash = stream.str();
+	ImGui::InputText("Hash", &hash,ImGuiInputTextFlags_ReadOnly);
 }
 
 void frontend::render_gui()
@@ -248,9 +279,18 @@ void frontend::render_gui()
 			fen_error_timer.restart();
 			return;
 		}
+		
+		if (thinking_thread.joinable())
+			thinking_thread.join();
 
 		// For now the computer can only play black
 		gp = std::unique_ptr<gameplay>(new gameplay_st(minutes_to_think, color::black, g, 1ULL<<tt_size_exponent));
+		back_buffer = gp->get_game();
+	}
+
+	if (mtt_error_timer.is_running() || tt_error_timer.is_running() || fen_error_timer.is_running())
+	{
+		ImGui::Separator();
 	}
 
 	if (mtt_error_timer.is_running())
@@ -268,16 +308,44 @@ void frontend::render_gui()
 		ImGui::TextColored(ImVec4(1, 0, 0, 1), "FEN String was invalid");
 	}
 
-	if (move_invalid_timer.is_running())
+}
+
+frontend::~frontend()
+{
+	if(thinking_thread.joinable())
+		thinking_thread.join();
+}
+
+
+void frontend::computer_pick_next_move()
+{
+	if (gp == nullptr)
 	{
-		ImGui::TextColored(ImVec4(1, 0, 0, 1), "Move was invalid");
+		thinking = false;
+		return;
 	}
 
+	auto info_ = gp->pick_next_move();
+	if (!info_.has_value())
+	{
+		printf("Error: Move had no value");
+		return;
+	}
+	auto info = info_.value();
+	pv.clear();
+	for (int i = 0; i < info.principal_variation.size(); i++)
+	{
+		pv += std::to_string(i + 1) + ". " + gp->get_game().from_move_to_dooce_algebraic_notation(info.principal_variation[i]) + "\n";
+	}
+	depth = info.depth;
+	score = info.score / 100.f;
+	back_buffer = gp->get_game();
+	thinking = false;
 }
 
 void frontend::update_game(const point& from_, const point& to)
 {
-	if (gp == nullptr || !from_.is_valid() || !to.is_valid()) return;
+	if (gp == nullptr || !from_.is_valid() || !to.is_valid() || thinking) return;
 	int idx_from = ops::to_idx(7-from_.x, 7-from_.y);
 	int idx_to = ops::to_idx(7-to.x, 7-to.y);
 	// Doesn't check for promotions right now.
@@ -287,12 +355,16 @@ void frontend::update_game(const point& from_, const point& to)
 	if (gp->get_game().get_game_context().turn == color::white)
 		m = gp->get_game().from_dooce_algebraic_notation<color::white>(from_str + to_str);
 	else m = gp->get_game().from_dooce_algebraic_notation<color::black>(from_str + to_str);
-	if (!m.has_value())
-	{
-		move_invalid_timer.restart();
+	if (!m.has_value() || !gp->incoming_move(m.value()))
 		return;
-	}
-	gp->incoming_move(m.value());
+
+	if (back_buffer.get_game_context().turn == color::white)
+		back_buffer.do_move<color::white>(m.value());
+	else back_buffer.do_move<color::black>(m.value());
+	thinking = true;
+	if(thinking_thread.joinable())
+		thinking_thread.join();
+	thinking_thread = std::thread([&]() {computer_pick_next_move(); });
 }
 
 void frontend::render()
@@ -301,7 +373,7 @@ void frontend::render()
 	if (gp != nullptr)
 	{
 		bool open = true;
-		ImGui::SetNextWindowSize({ BOARD_SIZE + 15, BOARD_SIZE + 30 });
+		ImGui::SetNextWindowSize({ BOARD_SIZE + 40, BOARD_SIZE + 55 });
 		if (ImGui::Begin("Board", &open, ImGuiWindowFlags_NoResize))
 		{
 			update_click();
@@ -315,8 +387,15 @@ void frontend::render()
 		}
 		if (!open)
 		{
+			if (thinking_thread.joinable())
+				thinking_thread.join();
 			gp = nullptr;
 		}
+
+		ImGui::Begin("Info");
+		render_info(); 
+		ImGui::End();
+
 	}
 
 	ImGui::Begin("Options");

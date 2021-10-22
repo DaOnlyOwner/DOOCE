@@ -36,16 +36,20 @@ gameplay(time_mins,my_turn),g(g),tt(cap_tt)
 {
 }
 
-move_info gameplay_st::pick_next_move()
+std::optional<move_info> gameplay_st::pick_next_move()
 {
-    // For now just call with 10 seconds and see how far I come
-    //int depth = 5;
-    //auto score = negamax<color::white>(timer(10000), depth, neg_inf, pos_inf, 1);
-    //move_info info;
-    //info.depth = depth;
-    //info.score = score;
-    //info.principal_variation = get_pv(g, tt);
-    //return info;
+//    //rnbqkbnr/2pppppp/B7/pp6/8/4P3/PPPP1PPP/RNBQK1NR w KQkq b6 0 3
+//    if (my_turn != g.get_game_context().turn) return {};
+//    int depth = 0;
+//    auto score = negamax<color::black>(timer(10000), depth, neg_inf, pos_inf, 1);
+//    move_info info;
+//    info.depth = depth;
+//    info.score = score;
+//    info.principal_variation = get_pv(g, tt);
+//
+// //   if (g.get_game_context().turn == color::white) g.do_move<color::white>(info.principal_variation[0]);
+////    else g.do_move<color::black>(info.principal_variation[0]);
+//    return info;
     float think_time = 60*1000*(time_mins / 35.f); // Assume 35 moves for a game for now.
     t.restart();
     auto [score,depth] = iterative_deepening(think_time);
@@ -76,12 +80,9 @@ game& gameplay_st::get_game()
 
 bool gameplay_st::incoming_move(const move& m)
 {
-
-    auto moves = g.legal_moves<color::white>();
-    if (std::find(moves.begin(), moves.end(), m) == moves.end())
-    {
-        return false;
-    }
+    if (!g.is_move_valid(m) || my_turn == g.get_game_context().turn)
+         return false;
+ 
 
     if (g.get_game_context().turn == color::white)
     {
@@ -101,8 +102,9 @@ std::pair<int, int> gameplay_st::iterative_deepening(float ms)
     {
         // If time is up or the last iteration took more than 85% of the time.
         if (t.time_is_up() || t.action_took_time_of_span() > 0.60f)
-        {    
-           break;
+        {
+            depth--;
+            break;
         }
         if (g.get_game_context().turn == color::white)
         {
@@ -177,7 +179,7 @@ int gameplay_st::negamax(const timer& t, int depth_left, int alpha, int beta, in
         score = std::max(-negamax<invert_color(VColor)>(t,depth_left - 1, -beta, -alpha, -c), score);
         
         // We improved the lowerbound 
-        if (score >= alpha)
+        if (score > alpha)
         {
             alpha = score;
             best_move = m;

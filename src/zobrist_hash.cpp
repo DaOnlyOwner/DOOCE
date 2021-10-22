@@ -62,7 +62,7 @@ void zobrist_hash::handle_quiet_move(uint ptype, uint c, uint from, uint to)
 }
 
 template<color VColor>
-void zobrist_hash::do_undo_move(uint ep_previous,const std::array<castling_info,2> ci_previous, const game_context& gc_after, const move& m)
+void zobrist_hash::do_undo_move(bitboard ep_previous,const std::array<castling_info,2> ci_previous, const game_context& gc_after, const move& m)
 {
 	constexpr uint c_idx = static_cast<uint>(VColor);
 	uint from = m.get_from_as_idx();
@@ -149,9 +149,9 @@ void zobrist_hash::do_undo_move(uint ep_previous,const std::array<castling_info,
 }
 
 template void zobrist_hash::do_undo_move<color::black>
-(uint ep_prev, const std::array<castling_info, 2> ci_prev, const game_context& after_gc, const move& m);
+(bitboard ep_prev, const std::array<castling_info, 2> ci_prev, const game_context& after_gc, const move& m);
 template void zobrist_hash::do_undo_move<color::white>
-(uint ep_prev, const std::array<castling_info, 2> ci_prev, const game_context& after_gc, const move& m);
+(bitboard ep_prev, const std::array<castling_info, 2> ci_prev, const game_context& after_gc, const move& m);
 
 
 

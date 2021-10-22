@@ -12,7 +12,7 @@ public:
 	zobrist_hash(const game_context& gc, const board& b);
 	u64 get_hash() const;
 	template<color c>
-	void do_undo_move(uint ep_prev,const std::array<castling_info,2> ci_prev, const game_context& after_gc, const move& m);
+	void do_undo_move(bitboard ep_prev,const std::array<castling_info,2> ci_prev, const game_context& after_gc, const move& m);
 private:
 	static void init_all();
 	static void init_piece_hash();

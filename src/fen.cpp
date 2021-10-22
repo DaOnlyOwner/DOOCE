@@ -162,7 +162,7 @@ game fen::fen_to_game(const std::string& fen)
 	gc.set_game_info(color::black, black);
 	gc.set_game_info(color::white, white);
 
-	uint ep = str_to_sq_idx(splitted[3]);
+	bitboard ep = ops::set_nth_bit(str_to_sq_idx(splitted[3]));
 	if (gc.turn == color::white)
 		ep = ops::so(ep);
 	else ep = ops::no(ep);

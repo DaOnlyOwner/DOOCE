@@ -94,7 +94,6 @@ void game::gen_attack_moves_from_pawns_inner(move& m, bitboard attack, std::vect
 	m.set_to(ops::num_trailing_zeros(attack));
 	auto captured = determine_capturing(VColor, attack);
 	bool promo = determine_promo<VColor>(attack);
-	move_type mtype;
 
 	m.set_captured_piece_type(captured);
 	if (piece_has_value(captured) && promo)
@@ -356,7 +355,7 @@ void game::do_move(const move& m)
 	constexpr square rook_kingside_opp = VColor == color::white ? square::h8 : square::h1;
 
 	auto ci_prev = gc.castling_info_for_sides;
-	uint ep_prev = gc.en_passantable_pawn;
+	bitboard ep_prev = gc.en_passantable_pawn;
 
 	castling_info& gi = gc.get_castling_info(VColor);
 	gi.has_moved_king = (m.get_moved_piece_type() == piece_type::king || gi.has_moved_king);
@@ -429,7 +428,7 @@ bool game::is_draw_by_rep() const
 	for (int j = move_list.size()-2; j >= 0; j--)
 	{
 		const auto& compare = move_list[j];
-		if (compare.zh.get_hash() == compare.zh.get_hash())
+		if (to_check.zh.get_hash() == compare.zh.get_hash())
 			count++;
 		if (count == 3)
 			return true;
@@ -481,7 +480,7 @@ std::string game::from_move_to_dooce_algebraic_notation(const move& m)
 	if (m.get_move_type() == move_type::king_castle) return "00";
 	if (m.get_move_type() == move_type::queen_castle) return "000";
 	auto out = sq_idx_to_str(m.get_from_as_idx()) + sq_idx_to_str(m.get_to_as_idx());
-	if (m.get_move_type() == move_type::captures || m.get_move_type() == move_type::promo_captures)
+	if (m.get_move_type() == move_type::promo || m.get_move_type() == move_type::promo_captures)
 	{
 		out.push_back('=');
 		out.push_back(pt_to_char[m.get_promo_piece_type()]);
@@ -545,23 +544,23 @@ inline std::optional<move> game::from_dooce_algebraic_notation(const std::string
 	if (!piece_has_value(move_ptype)) return {};
 	if (c != gc.turn) return {};
 	auto captured_ptype = determine_capturing(c, ops::set_nth_bit(to_idx));
-	bool promo;
+	bool promo=false;
 	piece_type promo_ptype = piece_type::none;
-	promo = determine_promo<VColor>(ops::set_nth_bit(to_idx));
-	// No promo specified
-
-	if (promo)
-	{
-		std::map<char, piece_type> char_to_pt = { { 'Q',piece_type::queen },{ 'R',piece_type::rook },{ 'N',piece_type::knight },{ 'B', piece_type::bishop } };
-		if (m.size() < 6) return {};
-		promo_ptype = char_to_pt[m[5]];
-	}
 
 	move_type mtype = move_type::quiet;
 	if (piece_has_value(captured_ptype)) mtype = move_type::captures;
 	if (move_ptype == piece_type::pawn && !piece_has_value(captured_ptype))
 	{
 
+		promo = determine_promo<VColor>(ops::set_nth_bit(to_idx));
+		// No promo specified
+
+		if (promo)
+		{
+			std::map<char, piece_type> char_to_pt = { { 'Q',piece_type::queen },{ 'R',piece_type::rook },{ 'N',piece_type::knight },{ 'B', piece_type::bishop } };
+			if (m.size() < 6) return {};
+			promo_ptype = char_to_pt[m[5]];
+		}
 		bitboard epl = gen::en_passant_left<VColor>(b, gc.en_passantable_pawn);
 		bitboard epr = gen::en_passant_right<VColor>(b, gc.en_passantable_pawn);
 		if (epl == to_idx || epr == to_idx) mtype = move_type::en_passant;

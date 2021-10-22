@@ -7,6 +7,7 @@
 #include "timer.h"
 #include "move.h"
 #include <vector>
+#include <optional>
 
 struct move_info
 {
@@ -19,7 +20,7 @@ class gameplay
 {
 public:
 	gameplay(float time_mins, color my_turn) :time_mins(time_mins),t(time_mins * 60.f * 1000.f),my_turn(my_turn) {}
-	virtual move_info pick_next_move() = 0;
+	virtual std::optional<move_info> pick_next_move() = 0;
 	virtual bool incoming_move(const move& m) = 0; 
 	virtual const game& get_game() const = 0;
 	virtual game& get_game() = 0;
@@ -35,7 +36,7 @@ class gameplay_st : public gameplay
 {
 public:
 	gameplay_st(float time_mins, color my_turn, const game& g, u64 cap_tt);
-	virtual move_info pick_next_move() override;
+	virtual std::optional<move_info> pick_next_move() override;
 	virtual bool incoming_move(const move& m) override;
 	virtual const game& get_game() const override;
 	virtual game& get_game() override;

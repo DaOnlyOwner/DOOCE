@@ -7,6 +7,8 @@
 #include "timer.h"
 #include <utility>
 #include "imgui.h"
+#include <atomic>
+#include <thread>
 #define BOARD_SIZE 640
 
 
@@ -34,6 +36,11 @@ struct point
 		x = -1; y = -1;
 	}
 
+	ImVec2 to_ImVec2()
+	{
+		return { (float)x,(float)y };
+	}
+
 };
 
 struct rect
@@ -51,6 +58,7 @@ class frontend
 public:
 	frontend();
 	void render();
+	~frontend();
 private:
 	constexpr static uint tt_size_exp_default = 20;
 	constexpr static float minutes_to_think_default = 5;
@@ -63,7 +71,8 @@ private:
 	void render_board(ImDrawList* dl);
 	void render_pieces(ImDrawList* dl);
 	void render_gui();
-
+	void render_info();
+	
 	std::pair<ImVec2, ImVec2> get_min_max(int x, int y, piece pt, ImVec2 offset);
 
 	bool clicked_on_piece();
@@ -71,12 +80,23 @@ private:
 	std::pair<point,point> update_let_go();
 	void update_drag();
 	void update_game(const point& from_,const point& to);
+	void computer_pick_next_move();
+
 
 	int tt_size_exponent = tt_size_exp_default;
 	float minutes_to_think = minutes_to_think_default;
 	std::string from_fen = from_fen_default;
 	std::map<piece_type, float> piece_offsets_x = { {piece_type::bishop,15},{piece_type::knight,15},{piece_type::pawn ,25},{piece_type::king , 15},{piece_type::rook , 25},{piece_type::queen , 13 } };
 	std::map<piece_type, float> piece_offsets_y = { {piece_type::bishop,33},{piece_type::knight,33},{piece_type::pawn ,39},{piece_type::king , 34},{piece_type::rook , 39},{piece_type::queen , 37 } };
+
+	std::thread thinking_thread;
+	std::atomic<bool> thinking = false;
+	game back_buffer;
+
+	// Not atomic because it doesn't matter if one frame shows the incorrect values
+	std::string pv = "";
+	int depth = 0;
+	float score = 0;
 
 	point from{};
 	point delta = { 0,0 };
@@ -85,6 +105,5 @@ private:
 	timer fen_error_timer;
 	timer tt_error_timer;
 	timer mtt_error_timer;
-	timer move_invalid_timer;
 
 };
