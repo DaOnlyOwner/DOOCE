@@ -280,13 +280,13 @@ void game::gen_move_castling(std::vector<move>& out)
 	if (can_castle_kingside)
 	{
 		mtype = (move_type::king_castle);
-		move m(0, 0, moved, {}, {}, mtype);
+		move m(0, 0, moved, piece_type::none, piece_type::none, mtype);
 		out.push_back(m);
 	}
 	if (can_castle_queenside)
 	{
 		mtype = (move_type::queen_castle);
-		move m(0, 0, moved, {}, {}, mtype);
+		move m(0, 0, moved, piece_type::none, piece_type::none, mtype);
 		out.push_back(m);
 	}
 }
@@ -600,19 +600,19 @@ inline std::optional<move> game::from_dooce_algebraic_notation(const std::string
 game::game() : b(), gc(), zh()
 {
 	if (!init) { gen::init_all(); init = true; }
-	move_list.reserve(9000);
+	move_list.reserve(max_ply);
 }
 
 game::game(const board& b, const game_context& gc) : b(b),gc(gc), zh(gc, b)
 {
 	if (!init) { gen::init_all(); init = true; }
-	move_list.reserve(9000);
+	move_list.reserve(max_ply);
 }
 
 game::game(const std::string& board_repr, const game_context& gc) : b(board_repr), gc(gc), zh(gc, b)
 {
 	if (!init) { gen::init_all(); init = true; }
-	move_list.reserve(9000);
+	move_list.reserve(max_ply);
 }
 
 

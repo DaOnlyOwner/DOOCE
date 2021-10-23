@@ -1,5 +1,6 @@
 #pragma once
-#include <gameplay.h>
+#include "gameplay_st.h"
+#include "gameplay_mt.h"
 #include <memory>
 #include <map>
 #include "definitions.h"
@@ -64,6 +65,9 @@ private:
 	constexpr static float minutes_to_think_default = 5;
 	constexpr static char* from_fen_default = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 ";
 	constexpr static int sq_size = BOARD_SIZE / 8;
+	std::map<piece_type, float> piece_offsets_x = { {piece_type::bishop,15},{piece_type::knight,15},{piece_type::pawn ,25},{piece_type::king , 15},{piece_type::rook , 25},{piece_type::queen , 13 } };
+	std::map<piece_type, float> piece_offsets_y = { {piece_type::bishop,33},{piece_type::knight,33},{piece_type::pawn ,39},{piece_type::king , 34},{piece_type::rook , 39},{piece_type::queen , 37 } };
+
 
 	std::map<piece, image> pieceToImage;
 	std::unique_ptr<gameplay> gp;
@@ -86,16 +90,13 @@ private:
 	int tt_size_exponent = tt_size_exp_default;
 	float minutes_to_think = minutes_to_think_default;
 	std::string from_fen = from_fen_default;
-	std::map<piece_type, float> piece_offsets_x = { {piece_type::bishop,15},{piece_type::knight,15},{piece_type::pawn ,25},{piece_type::king , 15},{piece_type::rook , 25},{piece_type::queen , 13 } };
-	std::map<piece_type, float> piece_offsets_y = { {piece_type::bishop,33},{piece_type::knight,33},{piece_type::pawn ,39},{piece_type::king , 34},{piece_type::rook , 39},{piece_type::queen , 37 } };
-
 	std::thread thinking_thread;
 	std::atomic<bool> thinking = false;
-	game back_buffer;
 
 	// Not atomic because it doesn't matter if one frame shows the incorrect values
 	std::string pv = "";
 	int depth = 0;
+	int searched_nodes = 0;
 	float score = 0;
 
 	point from{};

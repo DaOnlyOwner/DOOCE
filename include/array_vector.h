@@ -36,12 +36,12 @@ public:
 
 	T* begin()
 	{
-		return data.begin();
+		return data.data();
 	}
 
 	T* end()
 	{
-		return data.begin() + size;
+		return data.data() + size;
 	}
 
 private:

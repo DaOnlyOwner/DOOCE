@@ -120,7 +120,7 @@ std::pair<ImVec2, ImVec2> frontend::get_min_max(int x, int y, piece p, ImVec2 of
 void frontend::render_pieces(ImDrawList* dl)
 {
 	if (gp == nullptr) return;
-	auto mailbox = back_buffer.get_board().as_mailbox();
+	auto mailbox = gp->get_game().get_board().as_mailbox();
 	for (int x = 0; x < 8; x++)
 	{
 		for (int y = 0; y < 8; y++)
@@ -147,7 +147,7 @@ void frontend::render_pieces(ImDrawList* dl)
 bool frontend::clicked_on_piece()
 {
 	if (gp == nullptr) return false;
-	auto mailbox = back_buffer.get_board().as_mailbox();
+	auto mailbox = gp->get_game().get_board().as_mailbox();
 	auto pos = ImGui::GetMousePos();
 	for (int x = 0; x < 8; x++)
 	{
@@ -171,7 +171,7 @@ bool frontend::clicked_on_piece()
 void frontend::update_click()
 {
 	if (gp == nullptr) return;
-	auto mailbox = back_buffer.get_board().as_mailbox();
+	auto mailbox = gp->get_game().get_board().as_mailbox();
 	if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && !from.is_valid())
 	{
 		auto pos = ImGui::GetMousePos();
@@ -238,14 +238,16 @@ std::pair<point, point> frontend::update_let_go()
 
 void frontend::render_info()
 {
+	if (gp == nullptr) return;
 	ImGui::Text("Score: %f", score);
 	ImGui::Text("Reached depth: %i", depth);
+	ImGui::Text("Searched nodes: %iM (%i)", searched_nodes / 1000 / 1000, searched_nodes);
 	ImGui::InputTextMultiline("Principal Variation", &pv, ImVec2(100, 100), ImGuiInputTextFlags_ReadOnly);
 	ImGui::Separator();
-	std::string current_fen = fen::game_to_fen(back_buffer);
+	std::string current_fen = fen::game_to_fen(gp->get_game());
 	ImGui::InputText("Current FEN", &current_fen, ImGuiInputTextFlags_ReadOnly);
 	std::stringstream stream;
-	stream << std::hex << back_buffer.get_hash();
+	stream << std::hex << gp->get_game().get_hash();
 	std::string hash = stream.str();
 	ImGui::InputText("Hash", &hash,ImGuiInputTextFlags_ReadOnly);
 }
@@ -255,8 +257,16 @@ void frontend::render_gui()
 	ImGui::InputFloat("Minutes to think",&minutes_to_think);
 	ImGui::InputInt("Transposition table size exponent",&tt_size_exponent);
 	ImGui::InputText("From FEN", &from_fen); 
+	if (ImGui::Button("Load initial position"))
+	{
+		from_fen = from_fen_default;
+	}
 
-	if (ImGui::Button("New Game"))
+	bool new_game_st = ImGui::Button("New game singlethreaded");
+	ImGui::SameLine();
+	bool new_game_mt = ImGui::Button("New game multithreaded");
+
+	if (new_game_st || new_game_mt)
 	{
 		if (minutes_to_think == 0)
 		{
@@ -274,7 +284,7 @@ void frontend::render_gui()
 		{
 			g = fen::fen_to_game(from_fen);
 		}
-		catch (std::exception& e)
+		catch (std::exception&)
 		{
 			fen_error_timer.restart();
 			return;
@@ -284,8 +294,10 @@ void frontend::render_gui()
 			thinking_thread.join();
 
 		// For now the computer can only play black
-		gp = std::unique_ptr<gameplay>(new gameplay_st(minutes_to_think, color::black, g, 1ULL<<tt_size_exponent));
-		back_buffer = gp->get_game();
+		if(new_game_st)
+			gp = std::unique_ptr<gameplay>(new gameplay_st(minutes_to_think, color::black, g, 1ULL<<tt_size_exponent));
+		else if(new_game_mt)
+			gp = std::unique_ptr<gameplay>(new gameplay_mt(minutes_to_think, color::black, g, 1ULL << tt_size_exponent));
 	}
 
 	if (mtt_error_timer.is_running() || tt_error_timer.is_running() || fen_error_timer.is_running())
@@ -338,8 +350,8 @@ void frontend::computer_pick_next_move()
 		pv += std::to_string(i + 1) + ". " + gp->get_game().from_move_to_dooce_algebraic_notation(info.principal_variation[i]) + "\n";
 	}
 	depth = info.depth;
+	searched_nodes = info.searched_nodes;
 	score = info.score / 100.f;
-	back_buffer = gp->get_game();
 	thinking = false;
 }
 
@@ -357,10 +369,6 @@ void frontend::update_game(const point& from_, const point& to)
 	else m = gp->get_game().from_dooce_algebraic_notation<color::black>(from_str + to_str);
 	if (!m.has_value() || !gp->incoming_move(m.value()))
 		return;
-
-	if (back_buffer.get_game_context().turn == color::white)
-		back_buffer.do_move<color::white>(m.value());
-	else back_buffer.do_move<color::black>(m.value());
 	thinking = true;
 	if(thinking_thread.joinable())
 		thinking_thread.join();

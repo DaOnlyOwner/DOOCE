@@ -15,8 +15,12 @@ typedef uint32_t u32;
 
 inline constexpr i16 pos_inf = 30000;
 inline constexpr i16 neg_inf = -30000;
+inline constexpr int max_ply = 300;
 
 static_assert(sizeof(unsigned long long) == sizeof(uint64_t), "unsigned long long needs to be 64 bit");
+
+
+
 
 enum class piece_type : uint
 {

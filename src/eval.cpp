@@ -13,10 +13,8 @@ namespace
 }
 
 
-int eval::operator()(const game& g)
+eval::eval(const game& g)
 {
-	int material_score;
-	
 	const board& b = g.get_board();
 
 	material_score = material_difference(piece_type::bishop, b) * bWt +
@@ -24,6 +22,21 @@ int eval::operator()(const game& g)
 		material_difference(piece_type::rook, b) * rWt +
 		material_difference(piece_type::pawn, b) * pWt +
 		material_difference(piece_type::queen, b) * qWt;
+}
 
+void eval::do_move(const move& m, int c)
+{
+	material_score += weights[static_cast<int>(m.get_captured_piece_type())] * c;
+}
+
+void eval::undo_move(const move& m, int c)
+{
+	material_score -= weights[static_cast<int>(m.get_captured_piece_type())] * c;
+}
+
+int eval::operator()(const game& g)
+{
 	return material_score;
 }
+
+

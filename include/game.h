@@ -51,9 +51,6 @@ public:
 	template<color VColor>
 	void gen_piece_attacks_for_idx(uint idx, array_vector<piece_type, 6>& out) const;
 
-	template<color VColor>
-	bitboard gen_move_bb_for_idx(uint idx) const;
-
 	// The dooce algebraic notation:
 	/*
 	* - Specify only the from square and the to square, even if it's a capture

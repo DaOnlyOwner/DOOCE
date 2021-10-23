@@ -10,6 +10,11 @@ public:
 	move() = default;
 
 	move(uint from, uint to, piece_type moved, piece_type captured, piece_type promo, move_type mtype);
+	move(const move& m) = default;
+	move(move&& m) = default;
+	move& operator=(const move& m) = default;
+	move& operator=(move&& m) = default;
+
 
 	// TODO: Move the getter and setter to the cpp file
 
