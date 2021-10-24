@@ -222,6 +222,13 @@ bitboard board::get_board_of_side_not() const
 
 
 template<color VColor>
+bool board::has_pieces_except_pawn_king() const
+{
+	bitboard side = get_board_of_side<VColor>();
+	return (side & ~get_board(piece_type::pawn,VColor) & ~get_board(piece_type::king, VColor)) > 0;
+}
+
+template<color VColor>
 inline void board::do_move(const move& m)
 {
 	constexpr color ecolor = invert_color(VColor);
@@ -407,3 +414,6 @@ template void board::do_move<color::black>(const move& m);
 
 template void board::undo_move<color::white>(const move& m);
 template void board::undo_move<color::black>(const move& m);
+
+template bool board::has_pieces_except_pawn_king<color::white>() const;
+template bool board::has_pieces_except_pawn_king<color::black>() const;

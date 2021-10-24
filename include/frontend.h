@@ -1,6 +1,5 @@
 #pragma once
 #include "gameplay_st.h"
-#include "gameplay_mt.h"
 #include <memory>
 #include <map>
 #include "definitions.h"

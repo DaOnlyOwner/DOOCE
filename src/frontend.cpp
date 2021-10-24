@@ -262,11 +262,10 @@ void frontend::render_gui()
 		from_fen = from_fen_default;
 	}
 
-	bool new_game_st = ImGui::Button("New game singlethreaded");
+	bool new_game_st = ImGui::Button("New game");
 	ImGui::SameLine();
-	bool new_game_mt = ImGui::Button("New game multithreaded");
 
-	if (new_game_st || new_game_mt)
+	if (new_game_st)
 	{
 		if (minutes_to_think == 0)
 		{
@@ -296,8 +295,7 @@ void frontend::render_gui()
 		// For now the computer can only play black
 		if(new_game_st)
 			gp = std::unique_ptr<gameplay>(new gameplay_st(minutes_to_think, color::black, g, 1ULL<<tt_size_exponent));
-		else if(new_game_mt)
-			gp = std::unique_ptr<gameplay>(new gameplay_mt(minutes_to_think, color::black, g, 1ULL << tt_size_exponent));
+
 	}
 
 	if (mtt_error_timer.is_running() || tt_error_timer.is_running() || fen_error_timer.is_running())

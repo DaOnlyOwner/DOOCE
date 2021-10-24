@@ -32,6 +32,9 @@ public:
 	template<color VColor>
 	void undo_move();
 
+	void do_nullmove();
+	void undo_nullmove();
+
 	template<color VColor>
 	bool is_in_check() const;
 

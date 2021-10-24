@@ -28,12 +28,12 @@ std::tuple<int, int, int> gameplay_st::iterative_deepening(float ms)
             if (g.get_game_context().turn == color::white)
             {
                 t.action_now();
-                score = negamax<color::white>(depth, depth, neg_inf, pos_inf, 1, searched_nodes_);
+                score = negamax<color::white>(depth, depth, neg_inf, pos_inf, searched_nodes_,true);
             }
             else
             {
                 t.action_now();
-                score = -negamax<color::black>(depth, depth, neg_inf, pos_inf, -1, searched_nodes_);
+                score = -negamax<color::black>(depth, depth, neg_inf, pos_inf, searched_nodes_,true);
             }
             printf("Iteration took: %f time of span,d=%i\n", t.action_took_time_of_span(), depth);
             searched_nodes = searched_nodes_;
@@ -54,8 +54,9 @@ std::tuple<int, int, int> gameplay_st::iterative_deepening(float ms)
 
 //rnb1k1nr/pppp1ppp/4p3/8/1bBqPB2/2NP2P1/PPP2P1P/R2QK1NR w KQkq - 3 7
 template<color VColor>
-int gameplay_st::quiesence_search(int depth_left, int max_depth, int alpha, int beta, int c, int& searched_nodes)
+int gameplay_st::quiesence_search(int depth_left, int max_depth, int alpha, int beta, int& searched_nodes)
 {
+    constexpr int c = VColor == color::white ? 1 : -1;
     if (move_timer.time_is_up()) throw time_up();
     searched_nodes++;
     trans_entry& e = tt[g.get_hash()];
@@ -100,7 +101,7 @@ int gameplay_st::quiesence_search(int depth_left, int max_depth, int alpha, int 
     {
         g.do_move<VColor>(m);
         ev.do_move(m, c);
-        int score = -quiesence_search<invert_color(VColor)>(depth_left - 1, max_depth, -beta, -alpha, -c, searched_nodes);
+        int score = -quiesence_search<invert_color(VColor)>(depth_left - 1, max_depth, -beta, -alpha, searched_nodes);
         ev.undo_move(m, c);
         g.undo_move<VColor>();
 
@@ -120,8 +121,10 @@ int gameplay_st::quiesence_search(int depth_left, int max_depth, int alpha, int 
 
 // See https://en.wikipedia.org/wiki/Negamax
 template<color VColor>
-int gameplay_st::negamax(int depth_left, int max_depth, int alpha, int beta, int c, int& searched_nodes)
+int gameplay_st::negamax(int depth_left, int max_depth, int alpha, int beta, int& searched_nodes, bool null_move)
 {
+    constexpr int c = VColor == color::white ? 1 : -1;
+    constexpr int R = 2;
     if (move_timer.time_is_up()) throw time_up();
     searched_nodes++;
     //if (t.time_is_up()) throw time_up();
@@ -153,10 +156,20 @@ int gameplay_st::negamax(int depth_left, int max_depth, int alpha, int beta, int
 
     if (depth_left == 0)
     {
-        int score = quiesence_search<VColor>(DEPTH_QSEARCH, max_depth, alpha, beta, c, searched_nodes);
+        int score = quiesence_search<VColor>(DEPTH_QSEARCH, max_depth, alpha, beta, searched_nodes);
         searched_nodes--;
         return score;
     }
+    bool in_check = g.is_in_check<VColor>();
+    // Do a NULL move
+    if (ply > 0 && depth_left >= (R + 1) && !in_check && g.get_board().has_pieces_except_pawn_king<VColor>() && null_move)
+    {
+        g.do_nullmove();
+        int score_nullmove = -negamax<invert_color(VColor)>(depth_left - 1 - R, max_depth, -beta, -beta + 1, searched_nodes, false);
+        g.undo_nullmove();
+        if (score_nullmove >= beta) return beta;
+    }
+
 
     auto moves = g.legal_moves<VColor>();
     assert(moves.size() <= 250);
@@ -165,9 +178,10 @@ int gameplay_st::negamax(int depth_left, int max_depth, int alpha, int beta, int
     if (moves.size() == 0)
     {
         //printf("Fen: %s", fen::game_to_fen(g).c_str());
-        if (g.is_in_check<VColor>()) return pos_inf * c;
+        if (in_check) return pos_inf * c;
         else return 0;
     }
+
 
     int current_ply = ply + (max_depth - depth_left);
 
@@ -180,7 +194,7 @@ int gameplay_st::negamax(int depth_left, int max_depth, int alpha, int beta, int
         g.do_move<VColor>(m);
         ev.do_move(m, c);
         // We want the maximum value, thats the better score.
-        score = std::max(-negamax<invert_color(VColor)>(depth_left - 1, max_depth, -beta, -alpha, -c, searched_nodes), score);
+        score = std::max(-negamax<invert_color(VColor)>(depth_left - 1, max_depth, -beta, -alpha, searched_nodes,true), score);
 
         // We improved the lowerbound 
         if (score > alpha)
@@ -219,6 +233,6 @@ int gameplay_st::negamax(int depth_left, int max_depth, int alpha, int beta, int
     }
     // We improved the lowerbound
     else flag = move_flag::exact;
-    tt.insert(g.get_hash(), score, flag, depth_left, best_move, ply);
+    insert_tt(tt,g.get_hash(), score, flag, depth_left, best_move, ply);
     return score;
 }

@@ -56,6 +56,10 @@ public:
 
 	template<color VColor>
 	void undo_move(const move& m);
+
+	template<color VColor>
+	bool has_pieces_except_pawn_king() const;
+
 private:
 	bitboard boards[6][2];
 	bitboard whole_board;

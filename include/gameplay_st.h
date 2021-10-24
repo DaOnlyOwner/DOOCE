@@ -19,8 +19,8 @@ private:
 	move_ordering ordering;
 	timer move_timer;
 	template<color VColor>
-	int negamax(int depth_left, int max_depth, int alpha, int beta, int color, int& searched_nodes);
+	int negamax(int depth_left, int max_depth, int alpha, int beta, int& searched_nodes, bool null_move);
 
 	template<color VColor>
-	int quiesence_search(int depth_left, int max_depth, int alpha, int beta, int c, int& searched_nodes);
+	int quiesence_search(int depth_left, int max_depth, int alpha, int beta, int& searched_nodes);
 };

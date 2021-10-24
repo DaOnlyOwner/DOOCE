@@ -296,6 +296,21 @@ bool game::is_draw_by_halfmoves() const
 	return gc.half_move_clock >= 50;
 }
 
+void game::do_nullmove()
+{
+	move_list.emplace_back(move{}, gc, zh);
+	gc.turn = invert_color(gc.turn);
+	gc.en_passantable_pawn = 0;
+}
+
+void game::undo_nullmove()
+{
+	auto [_1, gc_, _2] = move_list.back();
+	move_list.pop_back();
+	gc = gc_;
+}
+
+
 template<color VColor, bool VOnlyCaptures>
 std::vector<move> game::legal_moves()
 {
