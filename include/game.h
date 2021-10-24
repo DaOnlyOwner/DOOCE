@@ -10,6 +10,12 @@
 #include "array_vector.h"
 #include "misc_tools.h"
 
+
+enum class game_over_state
+{
+	white_won=0,black_won,draw,running
+};
+
 class game
 {
 public:
@@ -68,6 +74,8 @@ public:
 	std::string from_move_to_dooce_algebraic_notation(const move& m);
 
 	bool is_move_valid(const move& m);
+
+	game_over_state get_game_over_state();
 
 private:
 	struct move_list_elements

@@ -78,7 +78,6 @@ private:
 	
 	std::pair<ImVec2, ImVec2> get_min_max(int x, int y, piece pt, ImVec2 offset);
 
-	bool clicked_on_piece();
 	void update_click();
 	std::pair<point,point> update_let_go();
 	void update_drag();
@@ -91,6 +90,9 @@ private:
 	std::string from_fen = from_fen_default;
 	std::thread thinking_thread;
 	std::atomic<bool> thinking = false;
+	std::atomic<game_over_state> gos;
+	bool view_as_white = true;
+	int play_color = 0;
 
 	// Not atomic because it doesn't matter if one frame shows the incorrect values
 	std::string pv = "";

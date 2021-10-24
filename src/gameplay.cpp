@@ -29,13 +29,13 @@ std::optional<move_info> gameplay_conventional::pick_next_move()
     if (front.get_game_context().turn == color::white)
     {
         front.do_move<color::white>(m);
-        ev.do_move(m, 1);
+        ev.do_move<color::white>(m,front);
     }
 
     else
     {
         front.do_move<color::black>(m);
-        ev.do_move(m, -1);
+        ev.do_move<color::black>(m,front);
     }
 
     t.stop();
@@ -44,18 +44,18 @@ std::optional<move_info> gameplay_conventional::pick_next_move()
 
 bool gameplay_conventional::incoming_move(const move& m)
 {
-    if (!front.is_move_valid(m) || my_turn == front.get_game_context().turn)
+    if (!front.is_move_valid(m))
         return false;
 
     if (front.get_game_context().turn == color::white)
     {
         front.do_move<color::white>(m);
-        ev.do_move(m, 1);
+        ev.do_move<color::white>(m, front);
     }
     else
     {
         front.do_move<color::black>(m);
-        ev.do_move(m, -1);
+        ev.do_move<color::black>(m, front);
     }
     ply++;
     return true;

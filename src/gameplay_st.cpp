@@ -28,12 +28,12 @@ std::tuple<int, int, int> gameplay_st::iterative_deepening(float ms)
             if (g.get_game_context().turn == color::white)
             {
                 t.action_now();
-                score = negamax<color::white>(depth, depth, neg_inf, pos_inf, searched_nodes_,true);
+                score = negamax<color::white>(depth, depth, neg_inf, pos_inf, searched_nodes_,false);
             }
             else
             {
                 t.action_now();
-                score = -negamax<color::black>(depth, depth, neg_inf, pos_inf, searched_nodes_,true);
+                score = -negamax<color::black>(depth, depth, neg_inf, pos_inf, searched_nodes_,false); // Dont perform null moves at the start
             }
             printf("Iteration took: %f time of span,d=%i\n", t.action_took_time_of_span(), depth);
             searched_nodes = searched_nodes_;
@@ -81,7 +81,7 @@ int gameplay_st::quiesence_search(int depth_left, int max_depth, int alpha, int 
         }
     }
     if (g.is_draw_by_rep() || g.is_draw_by_halfmoves()) return 0;
-    int stand_pat = ev(g) * c;
+    int stand_pat = ev(g,c);
     if (stand_pat >= beta) return beta;
     if (alpha < stand_pat) alpha = stand_pat;
 
@@ -100,9 +100,9 @@ int gameplay_st::quiesence_search(int depth_left, int max_depth, int alpha, int 
     for (move m : moves)
     {
         g.do_move<VColor>(m);
-        ev.do_move(m, c);
+        ev.do_move<VColor>(m,g);
         int score = -quiesence_search<invert_color(VColor)>(depth_left - 1, max_depth, -beta, -alpha, searched_nodes);
-        ev.undo_move(m, c);
+        ev.undo_move<VColor>(m,g);
         g.undo_move<VColor>();
 
         if (score >= beta)
@@ -162,7 +162,7 @@ int gameplay_st::negamax(int depth_left, int max_depth, int alpha, int beta, int
     }
     bool in_check = g.is_in_check<VColor>();
     // Do a NULL move
-    if (ply > 0 && depth_left >= (R + 1) && !in_check && g.get_board().has_pieces_except_pawn_king<VColor>() && null_move)
+    if (null_move && ply > 0 && depth_left >= (R + 1) && !in_check && g.get_board().has_pieces_except_pawn_king<VColor>())
     {
         g.do_nullmove();
         int score_nullmove = -negamax<invert_color(VColor)>(depth_left - 1 - R, max_depth, -beta, -beta + 1, searched_nodes, false);
@@ -192,7 +192,7 @@ int gameplay_st::negamax(int depth_left, int max_depth, int alpha, int beta, int
     for (move m : moves)
     {
         g.do_move<VColor>(m);
-        ev.do_move(m, c);
+        ev.do_move<VColor>(m,g);
         // We want the maximum value, thats the better score.
         score = std::max(-negamax<invert_color(VColor)>(depth_left - 1, max_depth, -beta, -alpha, searched_nodes,true), score);
 
@@ -208,11 +208,11 @@ int gameplay_st::negamax(int depth_left, int max_depth, int alpha, int beta, int
         {
             best_move = m;
             g.undo_move<VColor>();
-            ev.undo_move(m,c);
+            ev.undo_move<VColor>(m,g);
             ordering.update_killer_move(m, current_ply);
             break;
         }
-        ev.undo_move(m, c);
+        ev.undo_move<VColor>(m,g);
         g.undo_move<VColor>();
     }
 

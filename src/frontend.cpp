@@ -76,7 +76,10 @@ void frontend::render_board(ImDrawList* dl)
 {
 	ImVec2 min = ImGui::GetWindowContentRegionMin();
 	ImVec2 pos = ImGui::GetWindowPos();
-	int c = 1;
+	int c;
+	if (view_as_white)
+		c = 1;
+	else c = 0;
 	ImU32 colors[2] = { ImGui::ColorConvertFloat4ToU32({238/255.f,238/255.f,210/255.f,1.f}),ImGui::ColorConvertFloat4ToU32({118/255.f,150/255.f,86/255.f,1.f}) };
 	for (int i = 0; i < 8; i++)
 	{
@@ -127,10 +130,15 @@ void frontend::render_pieces(ImDrawList* dl)
 		{
 			if (from == point{ x,y })
 				continue;
+
 			auto p = mailbox[x][y];
 			if (!p.has_value()) continue;
 			image& img = pieceToImage[p.value()];
-			auto [min, max] = get_min_max(x, y, p.value(), { 0, 0 });
+			int y_in = 0;
+			if (view_as_white)
+				y_in = y;
+			else y_in = 7 - y;
+			auto [min, max] = get_min_max(x, y_in, p.value(), { 0, 0 });
 			dl->AddImage((void*)img.id, min, max);
 		}
 	}
@@ -139,33 +147,9 @@ void frontend::render_pieces(ImDrawList* dl)
 	{
 		auto p = mailbox[from.x][from.y];
 		image& img = pieceToImage[p.value()];
-		auto [min, max] = get_min_max(from.x, from.y, p.value(), { (float)delta.x,(float)delta.y });
+		auto [min, max] = get_min_max(from.x, view_as_white?from.y : 7-from.y, p.value(), { (float)delta.x,(float)delta.y });
 		dl->AddImage((void*)img.id, min, max);
 	}
-}
-
-bool frontend::clicked_on_piece()
-{
-	if (gp == nullptr) return false;
-	auto mailbox = gp->get_game().get_board().as_mailbox();
-	auto pos = ImGui::GetMousePos();
-	for (int x = 0; x < 8; x++)
-	{
-		for (int y = 0; y < 8; y++)
-		{
-			auto p = mailbox[x][y];
-			if (!p.has_value()) continue;
-			auto& img = pieceToImage[p.value()];
-			auto [min, max] = get_min_max(x, y, p.value(), { 0,0 });
-			auto r = rect{ point{(int)min.x,(int)min.y},point{(int)max.x,(int)max.y} };
-			auto click_pos = point{ (int)pos.x,(int)pos.y };
-			if (r.contains_point(click_pos))
-			{
-				return true;
-			}
-		}
-	}
-	return false;
 }
 
 void frontend::update_click()
@@ -182,9 +166,9 @@ void frontend::update_click()
 				auto p = mailbox[x][y];
 				if (!p.has_value()) continue;
 				auto& img = pieceToImage[p.value()];
-				auto [min, max] = get_min_max(x, y, p.value(), { 0,0 });
+				auto [min, max] = get_min_max(x, view_as_white ? y : 7-y, p.value(), { 0,0 });
 				auto r = rect{ point{(int)min.x,(int)min.y},point{(int)max.x,(int)max.y} };
-				auto click_pos = point{ (int)pos.x,(int)pos.y };
+				auto click_pos = point{ (int)pos.x,(int)pos.y};
 				if (r.contains_point(click_pos))
 				{
 					from = { x,y };
@@ -250,6 +234,15 @@ void frontend::render_info()
 	stream << std::hex << gp->get_game().get_hash();
 	std::string hash = stream.str();
 	ImGui::InputText("Hash", &hash,ImGuiInputTextFlags_ReadOnly);
+	ImGui::Separator();
+	std::string gos_str = "Game State: ";
+	if (gos == game_over_state::white_won) gos_str += "white won!";
+	else if (gos == game_over_state::black_won) gos_str += "black won!";
+	else if (gos == game_over_state::draw) gos_str += "Draw";
+	else gos_str += "Running";
+
+	ImGui::TextColored(ImVec4(1,1,0,1),"%s", gos_str.c_str());
+
 }
 
 void frontend::render_gui()
@@ -262,8 +255,13 @@ void frontend::render_gui()
 		from_fen = from_fen_default;
 	}
 
-	bool new_game_st = ImGui::Button("New game");
+	ImGui::RadioButton("Play as white", &play_color, 0);
 	ImGui::SameLine();
+	ImGui::RadioButton("Play as black", &play_color, 1);
+	bool new_game_st = ImGui::Button("New game");
+
+	ImGui::Separator();
+	ImGui::Checkbox("View from white perspective", &view_as_white);
 
 	if (new_game_st)
 	{
@@ -288,15 +286,31 @@ void frontend::render_gui()
 			fen_error_timer.restart();
 			return;
 		}
-		
+
 		if (thinking_thread.joinable())
 			thinking_thread.join();
 
 		// For now the computer can only play black
-		if(new_game_st)
-			gp = std::unique_ptr<gameplay>(new gameplay_st(minutes_to_think, color::black, g, 1ULL<<tt_size_exponent));
+		if (new_game_st)
+			gp = std::unique_ptr<gameplay>(new gameplay_st(minutes_to_think, color::black, g, 1ULL << tt_size_exponent));
+		
+		// Let the computer do the first move
+		if (gp != nullptr && play_color == 1)
+		{
+			thinking_thread = std::thread([&]() {computer_pick_next_move(); });
+		}
+		gos = gp->get_game().get_game_over_state();
 
+		if (play_color == 0)
+		{
+			view_as_white = true;
+		}
+		else
+		{
+			view_as_white = false;
+		}
 	}
+
 
 	if (mtt_error_timer.is_running() || tt_error_timer.is_running() || fen_error_timer.is_running())
 	{
@@ -351,22 +365,26 @@ void frontend::computer_pick_next_move()
 	searched_nodes = info.searched_nodes;
 	score = info.score / 100.f;
 	thinking = false;
+	gos = gp->get_game().get_game_over_state();
 }
 
 void frontend::update_game(const point& from_, const point& to)
 {
-	if (gp == nullptr || !from_.is_valid() || !to.is_valid() || thinking) return;
+	if (gp == nullptr || !from_.is_valid() || !to.is_valid() || thinking || gos != game_over_state::running) return;
+	
 	int idx_from = ops::to_idx(7-from_.x, 7-from_.y);
-	int idx_to = ops::to_idx(7-to.x, 7-to.y);
+	int idx_to = ops::to_idx(7-to.x, view_as_white?7-to.y:to.y);
 	// Doesn't check for promotions right now.
 	std::string from_str = sq_idx_to_str(idx_from);
 	std::string to_str = sq_idx_to_str(idx_to);
+	//printf("from: %s, to: %s\n", from_str.c_str(), to_str.c_str());
 	std::optional<move> m;
 	if (gp->get_game().get_game_context().turn == color::white)
 		m = gp->get_game().from_dooce_algebraic_notation<color::white>(from_str + to_str);
 	else m = gp->get_game().from_dooce_algebraic_notation<color::black>(from_str + to_str);
 	if (!m.has_value() || !gp->incoming_move(m.value()))
 		return;
+	gos = gp->get_game().get_game_over_state();
 	thinking = true;
 	if(thinking_thread.joinable())
 		thinking_thread.join();
@@ -375,7 +393,6 @@ void frontend::update_game(const point& from_, const point& to)
 
 void frontend::render()
 {
-
 	if (gp != nullptr)
 	{
 		bool open = true;

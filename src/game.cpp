@@ -311,6 +311,26 @@ void game::undo_nullmove()
 }
 
 
+game_over_state game::get_game_over_state()
+{
+	if (is_draw_by_halfmoves() || is_draw_by_rep()) return game_over_state::draw;
+	std::vector<move> moves;
+	if (gc.turn == color::white)
+		moves = legal_moves<color::white>();
+	else moves = legal_moves<color::black>();
+	if (moves.size() == 0)
+	{
+		bool in_check;
+		if (gc.turn == color::white)
+			in_check = is_in_check<color::white>();
+		else in_check = is_in_check<color::black>();
+		// White = 0 -> White_won = 0 etc.
+		if (in_check) return static_cast<game_over_state>(gc.turn);
+		else return game_over_state::draw;
+	}
+	return game_over_state::running;
+}
+
 template<color VColor, bool VOnlyCaptures>
 std::vector<move> game::legal_moves()
 {
@@ -492,8 +512,6 @@ void game::gen_piece_attacks_for_idx(uint idx, array_vector<piece_type, 6>& out)
 std::string game::from_move_to_dooce_algebraic_notation(const move& m)
 {
 	std::map<piece_type,char> pt_to_char = { { piece_type::queen,'Q'},{piece_type::rook,'R'},{piece_type::knight,'N'},{piece_type::bishop,'B'}};
-	if (m.get_move_type() == move_type::king_castle) return "00";
-	if (m.get_move_type() == move_type::queen_castle) return "000";
 	auto out = sq_idx_to_str(m.get_from_as_idx()) + sq_idx_to_str(m.get_to_as_idx());
 	if (m.get_move_type() == move_type::promo || m.get_move_type() == move_type::promo_captures)
 	{
@@ -518,7 +536,7 @@ template<color VColor>
 inline std::optional<move> game::from_dooce_algebraic_notation(const std::string& m)
 {
 	std::vector<move> moves = legal_moves<VColor>();
-	if (m == "00")
+	if ((m == "e1g1" && gc.turn == color::white) || (m=="e8g8" && gc.turn == color::black))
 	{
 		move mv{};
 		mv.set_from(0);
@@ -530,7 +548,7 @@ inline std::optional<move> game::from_dooce_algebraic_notation(const std::string
 		else return {};
 	}
 
-	else if (m == "000")
+	else if ((m == "e1c1" && gc.turn == color::white) || (m=="e8c8" && gc.turn == color::black))
 	{
 		move mv{};
 		mv.set_from(0);
