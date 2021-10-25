@@ -39,3 +39,4 @@ set_target_properties(dooce PROPERTIES
 	    CXX_STANDARD_REQUIRED ON
 	     )
 target_compile_definitions(dooce PUBLIC RESOURCE_DIR=\"${CMAKE_SOURCE_DIR}/pieces\") 
+target_link_libraries(dooce OpenMP::OpenMP_CXX)

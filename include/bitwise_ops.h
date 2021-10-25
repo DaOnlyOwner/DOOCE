@@ -18,6 +18,11 @@ namespace ops
 		return b << (r * 8);
 	}
 
+	inline bitboard inner_board_mask()
+	{
+		return 0x7e7e7e7e7e7e00;
+	}
+
 	// Make sure that bitboard has only one set bit.
 	inline bool has_bit_set_on_rank(bitboard b, int r)
 	{
@@ -81,6 +86,11 @@ namespace ops
 		return static_cast<bool>((b >> idx) & 1);
 	}
 
+	inline bool is_idx_set(bitboard b, int idx)
+	{
+		return (b & (1ULL << idx)) > 0;
+	}
+
 	constexpr inline bitboard set_square_bit(square sq)
 	{
 		uint idx = sq_to_int(sq);
@@ -142,8 +152,9 @@ namespace ops
 	}
 
 	// http://timcooijmans.blogspot.com/2014/04/hyperbola-quintessence-for-rooks-along.html
-	inline bitboard hyperbola_quintessence_for_ranks(bitboard occ, bitboard attack_mask, bitboard slider)
+	inline bitboard hyperbola_quintessence_for_ranks(bitboard occ, bitboard slider)
 	{
+		constexpr bitboard attack_mask = 9241421688590303745ULL; // Diagonal Ex 
 		uint shift_down = ops::num_trailing_zeros(slider) & 56; // == ((slider) >> 3) << 3, slider >> 3 gets the rank, << 3 multiplies the rank by 8, the number of bits we have to shift down.
 		constexpr bitboard first_rank_masked = ops::mask_rank(1);
 		bitboard mapped = (((occ >> shift_down) & first_rank_masked) * 0x0101010101010101) & 0x8040201008040201; // & ops::mask_rank(1) -> See the comment on the page
@@ -168,7 +179,7 @@ namespace ops
 		return count;
 	}
 
-	inline bitboard_constr get_antidiag(uint x, uint y)
+	inline bitboard_constr get_antidiag_mask(uint x, uint y)
 	{
 		// info: this is init, so don't care about performance
 		bitboard_constr bc(0);
@@ -184,7 +195,13 @@ namespace ops
 		return bc;
 	}
 
-	inline bitboard_constr get_diag(uint x, uint y)
+	inline bitboard get_antidiag_mask(int idx)
+	{
+		auto [x, y] = ops::from_idx(idx);
+		return get_antidiag_mask(x, y).to_ullong();
+	}
+
+	inline bitboard_constr get_diag_mask(uint x, uint y)
 	{
 		// info: this is init, so don't care about performance
 		bitboard_constr bc(0);
@@ -198,6 +215,12 @@ namespace ops
 				bc.set(ops::to_idx(x_off, y_off), true);
 		}
 		return bc;
+	}
+
+	inline bitboard get_diag_mask(int idx)
+	{
+		auto [x, y] = ops::from_idx(idx);
+		return get_diag_mask(x, y).to_ullong();
 	}
 
 	inline bitboard_constr get_file_mask(uint x, uint y)
@@ -217,5 +240,42 @@ namespace ops
 		uint idx = ops::to_idx(x, y);
 		return (rank_1 << (idx & 56)) ^ (bitboard_constr(1) << idx);*/
 	}
+
+	inline bitboard get_rank_mask_excluding_edges(int idx)
+	{
+		bitboard_constr bc{ 0 };
+		auto [_, y] = ops::from_idx(idx);
+		for (int x = 1; x < 7; x++)
+		{
+			bc.set(ops::to_idx(x, y), true);
+		}
+		return bc.to_ullong();
+	}
+
+	inline bitboard get_file_mask_excluding_edges(int idx)
+	{
+		bitboard_constr bc{ 0 };
+		auto [x, _] = ops::from_idx(idx);
+		for (int y = 1; y < 7; y++)
+		{
+			bc.set(ops::to_idx(x, y), true);
+		}
+		return bc.to_ullong();
+	}
+
+	inline bitboard get_rank_mask(int idx)
+	{
+		auto [x, y] = ops::from_idx(idx);
+		return get_rank_mask(x, y).to_ullong();
+	}
+
+	inline bitboard get_file_mask(int idx)
+	{
+		auto [x, y] = ops::from_idx(idx);
+		return get_file_mask(x, y).to_ullong();
+	}
+
+
+
 }
 

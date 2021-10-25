@@ -15,10 +15,13 @@ namespace gen
 	// ============================================================
 	//        S L I D E R S   D R A W   G E N E R A T I O N
 	// ============================================================
+	bitboard attacks_bishop_deprecated(const board& b, uint bishop_idx);
+	bitboard attacks_rook_deprecated(const board& b, uint rook_idx);
+	bitboard attacks_queen_deprecated(const board& b, uint nat_idx);
+
 	bitboard attacks_bishop(const board& b, uint bishop_idx);
 	bitboard attacks_rook(const board& b, uint rook_idx);
 	bitboard attacks_queen(const board& b, uint nat_idx);
-
 
 	// ============================================================
 	//   K I N G & K N I G H T  M O V E   G E N E R A T I O N

@@ -6,7 +6,7 @@
 #include "perft.h"
 #include "attack_bitboards.h"
 #include "fen.h"
-
+#include "magics.h"
 
 namespace
 {
@@ -83,6 +83,10 @@ namespace
 
 TEST_CASE("Debug")
 {
+    //magic::print_magics();
+    //game g = fen::fen_to_game("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+    //bitboard b = gen::attacks_rook(g.get_board(), 18);
+    //std::cout << board::get_bitboard(b);
     //game g;
     //validate_position(g, 1, perft_results{ 20, 0, 0, 0, 0 });
     //benchmark_perft(6);
@@ -610,7 +614,7 @@ TEST_CASE("Initial Perft", "[move_gen]")
 
  TEST_CASE("Benchmark")
  {
-     // This takes exactly 11 sec with Hyperbola Quintessence
+     // This takes exactly 10.65 sec with Hyperbola Quintessence
  	benchmark_perft(6);
  }
 #endif

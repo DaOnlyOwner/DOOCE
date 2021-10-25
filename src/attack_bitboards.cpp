@@ -1,4 +1,5 @@
 #include "attack_bitboards.h"
+#include "magics.h"
 
 namespace
 {
@@ -46,8 +47,8 @@ void gen::init_hq_masks()
 			hq_mask mask;
 
 			// Init diag and anti diag.
-			auto diag = ops::get_diag(x, y);
-			auto antidiag = ops::get_antidiag(x, y);
+			auto diag = ops::get_diag_mask(x, y);
+			auto antidiag = ops::get_antidiag_mask(x, y);
 			auto rank = ops::get_rank_mask(x, y);
 			auto file = ops::get_file_mask(x, y);
 			mask.diagEx = diag.to_ullong();
@@ -91,7 +92,7 @@ void gen::init_king_attacks()
 // ============================================================
 //        S L I D E R S   D R A W   G E N E R A T I O N
 // ============================================================
-bitboard gen::attacks_bishop(const board& b, uint bishop_idx)
+bitboard gen::attacks_bishop_deprecated(const board& b, uint bishop_idx)
 {
 	bitboard occ = b.get_whole_board();
 	auto& mask = hq_masks[bishop_idx];
@@ -99,20 +100,37 @@ bitboard gen::attacks_bishop(const board& b, uint bishop_idx)
 		ops::hyperbola_quintessence(occ, mask.antidiagEx, mask.mask));
 }
 
-bitboard gen::attacks_rook(const board& b, uint rook_idx)
+bitboard gen::attacks_rook_deprecated(const board& b, uint rook_idx)
 {
 	bitboard occ = b.get_whole_board();
 	constexpr bitboard whole_diag_ex = 9241421688590303745ULL; // Diagonal Ex 
 	auto& hq_mask = hq_masks[rook_idx];
 
 	bitboard file_attacks = ops::hyperbola_quintessence(occ, hq_mask.fileEx, hq_mask.mask);
-	bitboard rank_attacks = ops::hyperbola_quintessence_for_ranks(occ, whole_diag_ex, hq_mask.mask);
+	bitboard rank_attacks = ops::hyperbola_quintessence_for_ranks(occ, hq_mask.mask);
 	return (file_attacks | rank_attacks);
 }
 
-bitboard gen::attacks_queen(const board& b, uint nat_idx)
+bitboard gen::attacks_rook(const board& b, uint rook_idx)
 {
-	return attacks_bishop(b, nat_idx) | attacks_rook(b, nat_idx);
+	bitboard occ = b.get_whole_board();
+	return magic::rook_attacks(occ, rook_idx);
+}
+
+bitboard gen::attacks_bishop(const board& b, uint bishop_idx)
+{
+	bitboard occ = b.get_whole_board();
+	return magic::bishop_attacks(occ, bishop_idx);
+}
+
+bitboard gen::attacks_queen(const board& b, uint queen_idx)
+{
+	return attacks_bishop(b, queen_idx) | attacks_rook(b,queen_idx);
+}
+
+bitboard gen::attacks_queen_deprecated(const board& b, uint nat_idx)
+{
+	return attacks_bishop_deprecated(b, nat_idx) | attacks_rook_deprecated(b, nat_idx);
 }
 
 // King attack bits
@@ -137,6 +155,7 @@ void gen::init_all()
 	init_king_attacks();
 	init_hq_masks();
 	init_knight_attacks();
+	magic::init_magics();
 }
 
 template<color VColor>
