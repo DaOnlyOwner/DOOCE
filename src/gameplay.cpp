@@ -14,6 +14,7 @@ std::optional<move_info> gameplay_conventional::pick_next_move()
 // //   if (g.get_game_context().turn == color::white) g.do_move<color::white>(info.principal_variation[0]);
 ////    else g.do_move<color::black>(info.principal_variation[0]);
 //    return info;
+    if (front.get_game_over_state() != game_over_state::running) return {};
     float think_time = 60 * 1000 * (time_mins / 35.f); // Assume 35 moves for a game for now.
     t.restart();
     auto [score, depth, searched_nodes] = iterative_deepening(think_time);
@@ -37,7 +38,7 @@ std::optional<move_info> gameplay_conventional::pick_next_move()
         front.do_move<color::black>(m);
         ev.do_move<color::black>(m,front);
     }
-
+    //printf("AFTER MOVE: %s", front.get_board().pretty().c_str());
     t.stop();
     return info;
 }

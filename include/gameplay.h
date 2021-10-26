@@ -58,6 +58,7 @@ public:
 	virtual bool incoming_move(const move& m) = 0; 
 	virtual const game& get_game() const = 0;
 	virtual game& get_game() = 0;
+	virtual ~gameplay() = default;
 
 protected:
 	float time_mins;
@@ -73,6 +74,7 @@ public:
 	virtual bool incoming_move(const move& m) override;
 	virtual const game& get_game() const override;
 	virtual game& get_game() override;
+	virtual ~gameplay_conventional() override = default;
 
 protected:
 	virtual std::tuple<int, int, int> iterative_deepening(float think_time) = 0;

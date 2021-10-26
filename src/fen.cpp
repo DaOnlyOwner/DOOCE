@@ -159,6 +159,14 @@ game fen::fen_to_game(const std::string& fen)
 			black.has_moved_kingside_rook = false;
 		}
 	}
+
+	// If the white king / black king is not on the right square, he can't castle
+	auto [wk, wc] = b.get_occupation_of_idx(sq_to_int(square::e1));
+	auto [bk, bc] = b.get_occupation_of_idx(sq_to_int(square::e8));
+	if (!(wk == piece_type::king && wc == color::white)) white.has_moved_king = true;
+	if (!(bk == piece_type::king && wc == color::black)) black.has_moved_king = true;
+
+
 	gc.set_game_info(color::black, black);
 	gc.set_game_info(color::white, white);
 

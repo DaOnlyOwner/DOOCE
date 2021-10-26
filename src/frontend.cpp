@@ -13,6 +13,8 @@
 #include <optional>
 #include <iomanip>
 #include <sstream>
+#include <cstdlib>
+#include <cmath>
 
 namespace
 {
@@ -76,10 +78,7 @@ void frontend::render_board(ImDrawList* dl)
 {
 	ImVec2 min = ImGui::GetWindowContentRegionMin();
 	ImVec2 pos = ImGui::GetWindowPos();
-	int c;
-	if (view_as_white)
-		c = 1;
-	else c = 0;
+	int c = 1;
 	ImU32 colors[2] = { ImGui::ColorConvertFloat4ToU32({238/255.f,238/255.f,210/255.f,1.f}),ImGui::ColorConvertFloat4ToU32({118/255.f,150/255.f,86/255.f,1.f}) };
 	for (int i = 0; i < 8; i++)
 	{
@@ -134,11 +133,18 @@ void frontend::render_pieces(ImDrawList* dl)
 			auto p = mailbox[x][y];
 			if (!p.has_value()) continue;
 			image& img = pieceToImage[p.value()];
-			int y_in = 0;
+			int y_in=0,x_in = 0;
 			if (view_as_white)
+			{
 				y_in = y;
-			else y_in = 7 - y;
-			auto [min, max] = get_min_max(x, y_in, p.value(), { 0, 0 });
+				x_in = x;
+			}
+			else
+			{
+				y_in = 7 - y;
+				x_in = 7 - x;
+			}
+			auto [min, max] = get_min_max(x_in, y_in, p.value(), { 0, 0 });
 			dl->AddImage((void*)img.id, min, max);
 		}
 	}
@@ -147,7 +153,7 @@ void frontend::render_pieces(ImDrawList* dl)
 	{
 		auto p = mailbox[from.x][from.y];
 		image& img = pieceToImage[p.value()];
-		auto [min, max] = get_min_max(from.x, view_as_white?from.y : 7-from.y, p.value(), { (float)delta.x,(float)delta.y });
+		auto [min, max] = get_min_max(view_as_white ? from.x : 7-from.x, view_as_white?from.y : 7-from.y, p.value(), { (float)delta.x,(float)delta.y });
 		dl->AddImage((void*)img.id, min, max);
 	}
 }
@@ -166,7 +172,7 @@ void frontend::update_click()
 				auto p = mailbox[x][y];
 				if (!p.has_value()) continue;
 				auto& img = pieceToImage[p.value()];
-				auto [min, max] = get_min_max(x, view_as_white ? y : 7-y, p.value(), { 0,0 });
+				auto [min, max] = get_min_max(view_as_white ? x : 7-x, view_as_white ? y : 7-y, p.value(), { 0,0 });
 				auto r = rect{ point{(int)min.x,(int)min.y},point{(int)max.x,(int)max.y} };
 				auto click_pos = point{ (int)pos.x,(int)pos.y};
 				if (r.contains_point(click_pos))
@@ -223,7 +229,12 @@ std::pair<point, point> frontend::update_let_go()
 void frontend::render_info()
 {
 	if (gp == nullptr) return;
-	ImGui::Text("Score: %f", score);
+	if (std::abs(score) >= mate)
+	{
+		int mate_in = std::abs(score) - mate;
+		ImGui::Text("Score: Mate in %i", (int)std::ceil(mate_in/2.0f));
+	}
+	else ImGui::Text("Score: %f", score/100.f);
 	ImGui::Text("Reached depth: %i", depth);
 	ImGui::Text("Searched nodes: %iM (%i)", searched_nodes / 1000 / 1000, searched_nodes);
 	ImGui::InputTextMultiline("Principal Variation", &pv, ImVec2(100, 100), ImGuiInputTextFlags_ReadOnly);
@@ -248,7 +259,7 @@ void frontend::render_info()
 void frontend::render_gui()
 {
 	ImGui::InputFloat("Minutes to think",&minutes_to_think);
-	ImGui::InputInt("Transposition table size exponent",&tt_size_exponent);
+	ImGui::DragInt("Transposition table size exponent",&tt_size_exponent,1.0f,20,35);
 	ImGui::InputText("From FEN", &from_fen); 
 	if (ImGui::Button("Load initial position"))
 	{
@@ -295,11 +306,11 @@ void frontend::render_gui()
 			gp = std::unique_ptr<gameplay>(new gameplay_st(minutes_to_think, color::black, g, 1ULL << tt_size_exponent));
 		
 		// Let the computer do the first move
-		if (gp != nullptr && play_color == 1)
+		gos = gp->get_game().get_game_over_state();
+		if ((play_color == 1 && g.get_game_context().turn == color::white) || (play_color == 0 && g.get_game_context().turn == color::black))
 		{
 			thinking_thread = std::thread([&]() {computer_pick_next_move(); });
 		}
-		gos = gp->get_game().get_game_over_state();
 
 		if (play_color == 0)
 		{
@@ -363,7 +374,7 @@ void frontend::computer_pick_next_move()
 	}
 	depth = info.depth;
 	searched_nodes = info.searched_nodes;
-	score = info.score / 100.f;
+	score = info.score;
 	thinking = false;
 	gos = gp->get_game().get_game_over_state();
 }
@@ -373,7 +384,7 @@ void frontend::update_game(const point& from_, const point& to)
 	if (gp == nullptr || !from_.is_valid() || !to.is_valid() || thinking || gos != game_over_state::running) return;
 	
 	int idx_from = ops::to_idx(7-from_.x, 7-from_.y);
-	int idx_to = ops::to_idx(7-to.x, view_as_white?7-to.y:to.y);
+	int idx_to = ops::to_idx(view_as_white? 7-to.x : to.x, view_as_white?7-to.y:to.y);
 	// Doesn't check for promotions right now.
 	std::string from_str = sq_idx_to_str(idx_from);
 	std::string to_str = sq_idx_to_str(idx_to);

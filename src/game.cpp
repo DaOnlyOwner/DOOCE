@@ -325,7 +325,7 @@ game_over_state game::get_game_over_state()
 			in_check = is_in_check<color::white>();
 		else in_check = is_in_check<color::black>();
 		// White = 0 -> White_won = 0 etc.
-		if (in_check) return static_cast<game_over_state>(gc.turn);
+		if (in_check) return static_cast<game_over_state>(invert_color(gc.turn));
 		else return game_over_state::draw;
 	}
 	return game_over_state::running;

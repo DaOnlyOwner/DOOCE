@@ -47,6 +47,11 @@ std::tuple<int, int, int> gameplay_st::iterative_deepening(float ms)
             depth--;
             break;
         }
+        if (std::abs(score) >= mate)
+        {
+            printf("NOW: %i",score);
+            break;
+        }
     }
     printf("\n");
     return { score, depth,searched_nodes };
@@ -118,7 +123,11 @@ int gameplay_st::quiesence_search(int depth_left, int max_depth, int alpha, int 
 
     return alpha;
 }
-
+//5rk1/pb3ppp/3bp3/3n4/3P4/1Q2P1Pq/PBR2PBP/5RK1 b - - 0 1 mate in 3
+// r6r/pp1k1Npp/1bp4n/4Q2b/2B1P2q/B1P2P2/P5PP/RN5K w - - 0 1
+// 5rk1/pb3ppp/3bp3/3n4/3P4/1Q2P1Pq/PBR2PBP/5RK1 b - - 0 1
+// 5rk1/pb3ppp/3bp3/8/3P1n2/1Q2P1P1/PBR2P1P/5RK1 b - - 2 3
+// 5rk1/pb3ppp/3bp3/8/3P1n2/1Q2P1P1/PBR2P1P/5RK1 b - - 2 3
 // See https://en.wikipedia.org/wiki/Negamax
 template<color VColor>
 int gameplay_st::negamax(int depth_left, int max_depth, int alpha, int beta, int& searched_nodes, bool null_move)
@@ -127,7 +136,6 @@ int gameplay_st::negamax(int depth_left, int max_depth, int alpha, int beta, int
     constexpr int R = 2;
     if (move_timer.time_is_up()) throw time_up();
     searched_nodes++;
-    //if (t.time_is_up()) throw time_up();
     int orig_alpha = alpha;
     trans_entry& e = tt[g.get_hash()];
     // e.depth stores the values for a search to depth e.depth.
@@ -169,19 +177,16 @@ int gameplay_st::negamax(int depth_left, int max_depth, int alpha, int beta, int
         g.undo_nullmove();
         if (score_nullmove >= beta) return beta;
     }
-
-
     auto moves = g.legal_moves<VColor>();
     assert(moves.size() <= 250);
     //bool is_in_check = g.is_in_check<VColor>();
     //depth_left = is_in_check ? depth_left + 1 : depth_left;
     if (moves.size() == 0)
     {
-        //printf("Fen: %s", fen::game_to_fen(g).c_str());
-        if (in_check) return pos_inf * c;
+        if (in_check)
+            return (mate + (max_depth - depth_left))*-1; // This took me long, but why is the mate score not relative to the side?
         else return 0;
     }
-
 
     int current_ply = ply + (max_depth - depth_left);
 
@@ -189,16 +194,19 @@ int gameplay_st::negamax(int depth_left, int max_depth, int alpha, int beta, int
 
     int score = neg_inf;
     move best_move{};
-    for (move m : moves)
+    for (const move& m : moves)
     {
         g.do_move<VColor>(m);
-        ev.do_move<VColor>(m,g);
+        ev.do_move<VColor>(m, g);
         // We want the maximum value, thats the better score.
-        score = std::max(-negamax<invert_color(VColor)>(depth_left - 1, max_depth, -beta, -alpha, searched_nodes,true), score);
-
+        int s = -negamax<invert_color(VColor)>(depth_left - 1, max_depth, -beta, -alpha, searched_nodes, true);
+        score = std::max(s, score);
+        ev.undo_move<VColor>(m,g);
+        g.undo_move<VColor>();
         // We improved the lowerbound 
         if (score > alpha)
         {
+            //if (std::abs(score) >= mate && (max_depth-depth_left == 2)) printf("score=%i, alpha=%i, d=%i ", score,alpha,max_depth-depth_left);
             alpha = score;
             best_move = m;
         }
@@ -206,16 +214,12 @@ int gameplay_st::negamax(int depth_left, int max_depth, int alpha, int beta, int
         // If we have a score thats greater than our upperbound, we can prune 
         if (alpha >= beta)
         {
+            //if (score >= pos_inf) printf("d=%i ", max_depth-depth_left);
             best_move = m;
-            g.undo_move<VColor>();
-            ev.undo_move<VColor>(m,g);
             ordering.update_killer_move(m, current_ply);
             break;
         }
-        ev.undo_move<VColor>(m,g);
-        g.undo_move<VColor>();
     }
-
     move_flag flag;
     // Every move was worse than what we currently have. 
     // The retriever might have an even worse move, so this represents an upperbound

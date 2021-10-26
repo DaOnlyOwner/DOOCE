@@ -38,6 +38,7 @@ class cache
 public:
 	cache(u64 cap):cap(cap)
 	{
+		printf("New memory");
 		if (cap == 0) throw std::runtime_error("No capacity for tt");
 		if ((cap & (cap - 1)) != 0)
 			throw std::runtime_error("Capacity is not a power of two");
@@ -47,6 +48,7 @@ public:
 	~cache()
 	{
 		delete[] container;
+		printf("Deleted container");
 	}
 
 	T& operator[](u64 hash)

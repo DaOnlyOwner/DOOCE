@@ -9,6 +9,7 @@ class gameplay_st : public gameplay_conventional
 {
 public:
 	gameplay_st(float time_mins, color my_turn, const game& g, u64 cap_tt);
+	virtual ~gameplay_st() override = default;
 
 protected:
 	virtual std::tuple<int, int, int> iterative_deepening(float ms) override;

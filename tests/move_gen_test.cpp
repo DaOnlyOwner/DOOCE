@@ -83,6 +83,18 @@ namespace
 
 TEST_CASE("Debug")
 {
+    game g = fen::fen_to_game("5rk1/pb3ppp/3bp3/8/3P1n2/1Q2P1P1/PBR2P1P/5RK1 b - - 2 3");
+    auto moves = g.legal_moves<color::black>();
+    printf("%s\n", g.get_board().pretty().c_str());
+    auto m = g.from_dooce_algebraic_notation<color::black>("f4h3").value();
+    for (auto move : moves)
+    {
+        printf("%s\n",g.from_move_to_dooce_algebraic_notation(move).c_str());
+    }
+    g.do_move<color::black>(m);
+    printf("%s\n", g.get_board().pretty().c_str());
+    auto gos= g.get_game_over_state();
+    
     //magic::print_magics();
     //game g = fen::fen_to_game("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
     //bitboard b = gen::attacks_rook(g.get_board(), 18);
@@ -96,7 +108,7 @@ TEST_CASE("Debug")
     //check_branches("r3k2r/p1p1qpb1/bN2pnp1/3P4/1p2P3/2N2Q2/PPPBBPpP/R3K2R b KQkq - 0 2", 1);
 }
 
-#if 1
+#if 0
 TEST_CASE("Move struct")
 {
     move m;
