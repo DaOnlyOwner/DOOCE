@@ -7,6 +7,7 @@
 #include <optional>
 #include "game.h"
 #include "eval.h"
+#include "transposition_table.h"
 
 #define DEPTH_QSEARCH 3
 
