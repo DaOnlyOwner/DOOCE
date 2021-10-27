@@ -164,7 +164,7 @@ game fen::fen_to_game(const std::string& fen)
 	auto [wk, wc] = b.get_occupation_of_idx(sq_to_int(square::e1));
 	auto [bk, bc] = b.get_occupation_of_idx(sq_to_int(square::e8));
 	if (!(wk == piece_type::king && wc == color::white)) white.has_moved_king = true;
-	if (!(bk == piece_type::king && wc == color::black)) black.has_moved_king = true;
+	if (!(bk == piece_type::king && bc == color::black)) black.has_moved_king = true;
 
 
 	gc.set_game_info(color::black, black);

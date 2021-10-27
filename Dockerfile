@@ -4,8 +4,7 @@ FROM ubuntu:20.04
 
 # install the build toolchain (gcc, cmake)
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y build-essential cmake \
-        python3 python3-distutils python3-pip && \
+RUN apt-get update && apt-get install -y build-essential cmake && \
     # pip3 install pip --upgrade && pip3 install scikit-build && \
     rm -rf /var/lib/apt/lists/*
 
@@ -17,7 +16,7 @@ ADD ./ /app/src
 WORKDIR /app/build
 
 # build the source code
-RUN cmake ../src -DCMAKE_BUILD_TYPE=Release && cmake --build .
+RUN cmake ../src -DCMAKE_BUILD_TYPE=Release -DBUILD_FRONTEND=OFF && cmake --build .
 
 # run the unit tests
 WORKDIR /app/build/tests

@@ -13,14 +13,4 @@ set_target_properties(move_gen_test
         CXX_EXTENSIONS NO
 )
 
-
-add_executable(gameplay_test ${FILES_} gameplay_test.cpp)
-set_target_properties(gameplay_test
-    PROPERTIES
-        CXX_STANDARD 17
-        CXX_STANDARD_REQUIRED YES
-        CXX_EXTENSIONS NO
-)
-
 target_include_directories(move_gen_test PRIVATE "../include")
-target_include_directories(gameplay_test PRIVATE "../include")
