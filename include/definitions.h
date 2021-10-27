@@ -2,6 +2,7 @@
 #include <bitset>
 #include <array>
 #include <cstdint>
+#include <tuple>
 
 typedef std::bitset<64> bitboard_constr;
 typedef uint64_t bitboard;
