@@ -5,6 +5,7 @@ find_package(OpenGL REQUIRED COMPONENTS OpenGL)
 
 file(GLOB_RECURSE FILES "../src/*.cpp" "../include/*.h" "extern/dearimgui/src/*.cpp")
 
+option(SET_RELATIVE_PATH "Set a relative path for the resources for installing" OFF)
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -26,4 +27,11 @@ set_target_properties(dooce_frontend PROPERTIES
 	    CXX_STANDARD_REQUIRED ON
 	     )
 
-target_compile_definitions(dooce_frontend PUBLIC RESOURCE_DIR=\"${CMAKE_SOURCE_DIR}/pieces\") 
+if(SET_RELATIVE_PATH)
+target_compile_definitions(dooce_frontend PUBLIC RESOURCE_DIR=\"pieces\") 
+else()
+target_compile_definitions(dooce_frontend PUBLIC RESOURCE_DIR=\"${CMAKE_SOURCE_DIR}/frontend/pieces\") 
+endif()
+
+install(TARGETS dooce_frontend DESTINATION dooce_application)
+install(DIRECTORY pieces/ DESTINATION dooce_application/pieces)

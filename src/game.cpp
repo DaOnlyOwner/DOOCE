@@ -424,7 +424,7 @@ void game::do_move(const move& m)
 
 	gc.turn = invert_color(gc.turn);
 	b.do_move<VColor>(m);
-	zh.do_undo_move<VColor>(ep_prev,ci_prev, gc, m);
+	zh.do_undo_move<VColor>(ep_prev, m.get_to_as_idx(), ci_prev, gc, m);
 }
 
 template<color VColor>

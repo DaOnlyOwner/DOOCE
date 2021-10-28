@@ -7,6 +7,7 @@
 #include "attack_bitboards.h"
 #include "fen.h"
 #include "magics.h"
+#include "zobrist_hash.h"
 
 namespace
 {
@@ -79,6 +80,34 @@ namespace
 		printf("===============================\n\n");
 	}
 
+    template<color VColor>
+    bool compare_zobrist_hashes_inner(int depth,game& g)
+    {
+        if (depth == 0) return true;
+        auto moves = g.legal_moves<VColor>();
+        for (const move& m : moves)
+        {
+            g.do_move<VColor>(m);
+            u64 hk = zobrist_hash::make_hash(g.get_game_context(), g.get_board());
+            if (hk != g.get_hash())
+            {
+                std::cout << "Failed in position: " << fen::game_to_fen(g) << "for move " << g.from_move_to_dooce_algebraic_notation(m) << " move type " << static_cast<uint>(m.get_move_type()) << " depth= " << depth
+                    << " make_hash: " << hk << " computed hash: " << g.get_hash() << std::endl;
+                return false;
+            }
+            if (!compare_zobrist_hashes_inner<invert_color(VColor)>(depth - 1, g)) return false;
+            g.undo_move<VColor>();
+        }
+        return true; 
+    }
+
+    bool compare_zobrist_hashes()
+    {
+        game g = fen::fen_to_game("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
+        return compare_zobrist_hashes_inner<color::white>(4, g);
+    }
+
+
 }
 
 TEST_CASE("Debug")
@@ -108,7 +137,20 @@ TEST_CASE("Debug")
     //check_branches("r3k2r/p1p1qpb1/bN2pnp1/3P4/1p2P3/2N2Q2/PPPBBPpP/R3K2R b KQkq - 0 2", 1);
 }
 
+
 #if 1
+
+TEST_CASE("Benchmark")
+{
+    // This takes exactly 10.65 sec with Hyperbola Quintessence
+    benchmark_perft(6);
+}
+
+TEST_CASE("Zobrist Hashing")
+{
+    REQUIRE(compare_zobrist_hashes());
+}
+
 TEST_CASE("Move struct")
 {
     move m;
@@ -624,9 +666,5 @@ TEST_CASE("Initial Perft", "[move_gen]")
 	}
 }
 
- TEST_CASE("Benchmark")
- {
-     // This takes exactly 10.65 sec with Hyperbola Quintessence
- 	benchmark_perft(6);
- }
+
 #endif

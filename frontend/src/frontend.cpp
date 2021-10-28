@@ -232,7 +232,7 @@ void frontend::render_info()
 	if (std::abs(score) >= mate)
 	{
 		int mate_in = std::abs(score) - mate;
-		ImGui::Text("Score: Mate in %i", (int)std::ceil(mate_in/2.0f));
+		ImGui::Text("Score: Mate in %i plies", mate_in);
 	}
 	else ImGui::Text("Score: %f", score/100.f);
 	ImGui::Text("Reached depth: %i", depth);

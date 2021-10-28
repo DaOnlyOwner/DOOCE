@@ -24,8 +24,18 @@ zobrist_hash::zobrist_hash() :
 zobrist_hash::zobrist_hash(const game_context& gc, const board& b)
 {
 	if (!init) init_all();
-	uint ep_idx = ops::get_rank(ops::num_trailing_zeros(gc.en_passantable_pawn));
-	hash ^= ep_square_hash[ep_idx] ^ (gc.turn == color::black ? black_to_move_hash : 0);
+	hash = make_hash(gc, b);
+}
+
+u64 zobrist_hash::make_hash(const game_context& gc, const board& b)
+{
+	u64 hash = 0ULL;
+	if (gc.en_passantable_pawn)
+	{
+		uint ep_idx = ops::get_rank(ops::num_trailing_zeros(gc.en_passantable_pawn));
+		hash ^= ep_square_hash[ep_idx];
+	}
+	hash ^= (gc.turn == color::black ? black_to_move_hash : 0);
 	// Apply piece hash
 	for (int c = 0; c < 2; c++)
 	{
@@ -48,6 +58,7 @@ zobrist_hash::zobrist_hash(const game_context& gc, const board& b)
 		hash ^= ci.kingside_right() ? castling_rights_hash[c][0] : 0ULL;
 		hash ^= ci.queenside_right() ? castling_rights_hash[c][1] : 0ULL;
 	}
+	return hash;
 }
 
 u64 zobrist_hash::get_hash() const
@@ -62,12 +73,13 @@ void zobrist_hash::handle_quiet_move(uint ptype, uint c, uint from, uint to)
 }
 
 template<color VColor>
-void zobrist_hash::do_undo_move(bitboard ep_previous,const std::array<castling_info,2> ci_previous, const game_context& gc_after, const move& m)
+void zobrist_hash::do_undo_move(bitboard ep_previous, uint ep_idx_after, const std::array<castling_info,2> ci_previous, const game_context& gc_after, const move& m)
 {
 	constexpr uint c_idx = static_cast<uint>(VColor);
 	uint from = m.get_from_as_idx();
 	uint to = m.get_to_as_idx();
 	uint ptype = static_cast<uint>(m.get_moved_piece_type());
+	uint ctype = static_cast<uint>(m.get_captured_piece_type());
 	switch (m.get_move_type())
 	{
 	case move_type::pawn_single:
@@ -80,22 +92,22 @@ void zobrist_hash::do_undo_move(bitboard ep_previous,const std::array<castling_i
 	case move_type::captures:
 	{
 		handle_quiet_move(ptype, c_idx, from, to);
-		hash ^= piece_hash[1 - c_idx][ptype][to];
+		hash ^= piece_hash[1 - c_idx][ctype][to];
 	}
 	break;
 	case move_type::en_passant:
 	{
 		handle_quiet_move(ptype, c_idx, from, to);
 		if constexpr (VColor == color::white)
-			hash ^= piece_hash[1 - c_idx][ptype][to + 8];
-		else hash ^= piece_hash[1 - c_idx][ptype][to - 8];
+			hash ^= piece_hash[1 - c_idx][ctype][to - 8];
+		else hash ^= piece_hash[1 - c_idx][ctype][to + 8];
 	}
 	break;
 
 	case move_type::promo_captures:
 		// We fall through to case move_type::promo which handles the promotion part.
 	{
-		hash ^= piece_hash[1 - c_idx][ptype][to];
+		hash ^= piece_hash[1 - c_idx][ctype][to];
 	}
 	case move_type::promo:
 	{
@@ -127,10 +139,16 @@ void zobrist_hash::do_undo_move(bitboard ep_previous,const std::array<castling_i
 	break;
 	}
 
-	uint ep_idx = ops::get_rank(ops::num_trailing_zeros(ep_previous));
-	hash ^= ep_square_hash[ep_idx]; // Remove the previous hash
-	ep_idx = ops::get_rank(ops::num_trailing_zeros(gc_after.en_passantable_pawn));
-	hash ^= ep_square_hash[ep_idx];
+	if (ep_previous)
+	{
+		uint ep_idx = ops::get_rank(ops::num_trailing_zeros(ep_previous));
+		hash ^= ep_square_hash[ep_idx]; // Remove the previous hash
+	}
+
+	if (gc_after.en_passantable_pawn)
+	{
+		hash ^= ep_square_hash[ops::get_rank(ep_idx_after)];
+	}
 	auto& ci_after = gc_after.castling_info_for_sides;
 
 	for (int c = 0; c < 2; c++)
@@ -149,9 +167,9 @@ void zobrist_hash::do_undo_move(bitboard ep_previous,const std::array<castling_i
 }
 
 template void zobrist_hash::do_undo_move<color::black>
-(bitboard ep_prev, const std::array<castling_info, 2> ci_prev, const game_context& after_gc, const move& m);
+(bitboard ep_prev,uint, const std::array<castling_info, 2> ci_prev, const game_context& after_gc, const move& m);
 template void zobrist_hash::do_undo_move<color::white>
-(bitboard ep_prev, const std::array<castling_info, 2> ci_prev, const game_context& after_gc, const move& m);
+(bitboard ep_prev, uint, const std::array<castling_info, 2> ci_prev, const game_context& after_gc, const move& m);
 
 
 
